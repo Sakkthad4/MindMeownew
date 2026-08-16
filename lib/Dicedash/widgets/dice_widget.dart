@@ -5,11 +5,7 @@ class DiceFace extends StatelessWidget {
   final int value;
   final double size;
 
-  const DiceFace({
-    super.key,
-    required this.value,
-    this.size = 110,
-  });
+  const DiceFace({super.key, required this.value, this.size = 110});
 
   @override
   Widget build(BuildContext context) {
@@ -46,13 +42,26 @@ class DiceFace extends StatelessWidget {
 
     List<Offset> pos;
     switch (v) {
-      case 1: pos = [c]; break;
-      case 2: pos = [tl, br]; break;
-      case 3: pos = [tl, c, br]; break;
-      case 4: pos = [tl, tr, bl, br]; break;
-      case 5: pos = [tl, tr, c, bl, br]; break;
-      case 6: pos = [tl, tr, ml, mr, bl, br]; break;
-      default: pos = [c];
+      case 1:
+        pos = [c];
+        break;
+      case 2:
+        pos = [tl, br];
+        break;
+      case 3:
+        pos = [tl, c, br];
+        break;
+      case 4:
+        pos = [tl, tr, bl, br];
+        break;
+      case 5:
+        pos = [tl, tr, c, bl, br];
+        break;
+      case 6:
+        pos = [tl, tr, ml, mr, bl, br];
+        break;
+      default:
+        pos = [c];
     }
 
     return pos.map((p) => _pip(p)).toList();
@@ -73,7 +82,7 @@ class DiceFace extends StatelessWidget {
                 blurRadius: 8,
                 offset: const Offset(0, 3),
                 color: alphaColor(Colors.black, 0.18),
-              )
+              ),
             ],
           ),
         ),

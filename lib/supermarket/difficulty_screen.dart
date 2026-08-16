@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'models.dart';
 import 'gacha_screen.dart';
 import '../audio/bgm_scope.dart';
-import '../audio/soundeffect.dart';
+import '../app_language.dart';
 
 class DifficultyScreen extends StatelessWidget {
   const DifficultyScreen({super.key});
@@ -193,7 +193,7 @@ class DifficultyScreen extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              "Memory Game",
+                              AppText.get('memoryGame'),
                               style: TextStyle(
                                 fontSize: titleSize,
                                 fontWeight: FontWeight.w900,
@@ -213,14 +213,14 @@ class DifficultyScreen extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     diffCard(
-                                      label: "Easy",
+                                      label: AppText.get('easy'),
                                       imageAsset: "assets/difficulty/easy.png",
                                       onTap: () =>
                                           _go(context, Difficulty.easy),
                                     ),
                                     SizedBox(width: gapBetweenCardsWide),
                                     diffCard(
-                                      label: "Normal",
+                                      label: AppText.get('normal'),
                                       imageAsset:
                                           "assets/difficulty/normal.png",
                                       onTap: () =>
@@ -228,7 +228,7 @@ class DifficultyScreen extends StatelessWidget {
                                     ),
                                     SizedBox(width: gapBetweenCardsWide),
                                     diffCard(
-                                      label: "Hard",
+                                      label: AppText.get('hard'),
                                       imageAsset: "assets/difficulty/hard.png",
                                       onTap: () =>
                                           _go(context, Difficulty.hard),
@@ -243,7 +243,7 @@ class DifficultyScreen extends StatelessWidget {
                                   child: Column(
                                     children: [
                                       diffCard(
-                                        label: "Easy",
+                                        label: AppText.get('easy'),
                                         imageAsset:
                                             "assets/difficulty/easy.png",
                                         onTap: () =>
@@ -251,7 +251,7 @@ class DifficultyScreen extends StatelessWidget {
                                       ),
                                       SizedBox(height: gapBetweenCardsNarrow),
                                       diffCard(
-                                        label: "Normal",
+                                        label: AppText.get('normal'),
                                         imageAsset:
                                             "assets/difficulty/normal.png",
                                         onTap: () =>
@@ -259,7 +259,7 @@ class DifficultyScreen extends StatelessWidget {
                                       ),
                                       SizedBox(height: gapBetweenCardsNarrow),
                                       diffCard(
-                                        label: "Hard",
+                                        label: AppText.get('hard'),
                                         imageAsset:
                                             "assets/difficulty/hard.png",
                                         onTap: () =>

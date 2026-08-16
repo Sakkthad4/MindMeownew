@@ -1,9 +1,4 @@
-enum CatEmotion {
-  calm,
-  happy,
-  sad,
-  angry,
-}
+enum CatEmotion { calm, happy, sad, angry }
 
 /// Extension สำหรับ mapping emotion → eye mode (ESP ใช้)
 extension CatEmotionX on CatEmotion {

@@ -11,34 +11,34 @@ class SM {
   static const cartBlue = Color(0xFF77C9FF);
 
   static TextStyle title(BuildContext c) => TextStyle(
-        fontSize: 46 * scale(c),
-        fontWeight: FontWeight.w900,
-        color: Colors.white,
-      );
+    fontSize: 46 * scale(c),
+    fontWeight: FontWeight.w900,
+    color: Colors.white,
+  );
 
   static TextStyle h1(BuildContext c) => TextStyle(
-        fontSize: 42 * scale(c),
-        fontWeight: FontWeight.w900,
-        color: orange,
-      );
+    fontSize: 42 * scale(c),
+    fontWeight: FontWeight.w900,
+    color: orange,
+  );
 
   static TextStyle h2(BuildContext c) => TextStyle(
-        fontSize: 34 * scale(c),
-        fontWeight: FontWeight.w900,
-        color: orange,
-      );
+    fontSize: 34 * scale(c),
+    fontWeight: FontWeight.w900,
+    color: orange,
+  );
 
   static TextStyle body(BuildContext c) => TextStyle(
-        fontSize: 26 * scale(c),
-        fontWeight: FontWeight.w800,
-        color: Colors.black87,
-      );
+    fontSize: 26 * scale(c),
+    fontWeight: FontWeight.w800,
+    color: Colors.black87,
+  );
 
   static TextStyle bodySoft(BuildContext c) => TextStyle(
-        fontSize: 24 * scale(c),
-        fontWeight: FontWeight.w800,
-        color: Colors.black54,
-      );
+    fontSize: 24 * scale(c),
+    fontWeight: FontWeight.w800,
+    color: Colors.black54,
+  );
 
   static double scale(BuildContext c) {
     final w = MediaQuery.of(c).size.width;
@@ -46,18 +46,22 @@ class SM {
   }
 
   static BoxDecoration orangeFrame({double r = 30}) => BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(r),
-        border: Border.all(color: borderOrange, width: 6),
-      );
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(r),
+    border: Border.all(color: borderOrange, width: 6),
+  );
 
   static BoxDecoration softCard({double r = 30}) => BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(r),
-        boxShadow: const [
-          BoxShadow(color: Color(0x14000000), blurRadius: 20, offset: Offset(0, 10)),
-        ],
-      );
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(r),
+    boxShadow: const [
+      BoxShadow(
+        color: Color(0x14000000),
+        blurRadius: 20,
+        offset: Offset(0, 10),
+      ),
+    ],
+  );
 
   static Widget bgPattern({required Widget child}) {
     // Placeholder background (you will replace with Image.asset later)
@@ -87,13 +91,10 @@ class SM {
   }
 
   static ButtonStyle bigOrangeBtn(BuildContext c) => ElevatedButton.styleFrom(
-        backgroundColor: orange,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        textStyle: TextStyle(
-          fontSize: 40 * scale(c),
-          fontWeight: FontWeight.w900,
-        ),
-      );
+    backgroundColor: orange,
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+    textStyle: TextStyle(fontSize: 40 * scale(c), fontWeight: FontWeight.w900),
+  );
 }

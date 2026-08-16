@@ -1,6 +1,7 @@
 // lib/calendar_page.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'app_language.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -146,14 +147,16 @@ class DaySchedulePage extends StatelessWidget {
         '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
     return Scaffold(
-      appBar: AppBar(title: Text('Reminders • ${dateLabel(day)}')),
+      appBar: AppBar(
+        title: Text('${AppText.get('reminders')} • ${dateLabel(day)}'),
+      ),
       body: AnimatedBuilder(
         animation: store,
         builder: (_, __) {
           final items = store.forDay(day);
 
           if (items.isEmpty) {
-            return const Center(child: Text('No reminder'));
+            return Center(child: Text(AppText.get('noReminder')));
           }
 
           return ListView.separated(
@@ -251,21 +254,7 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   String monthLabel(DateTime d) {
-    const m = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return '${m[d.month - 1]} ${d.year}';
+    return '${AppText.month(d.month)} ${d.year}';
   }
 
   Future<void> _pickMonth() async {
@@ -300,18 +289,18 @@ class _CalendarPageState extends State<CalendarPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Add Reminder',
+            Text(
+              AppText.get('addReminder'),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: titleCtrl,
-              decoration: const InputDecoration(labelText: 'Title'),
+              decoration: InputDecoration(labelText: AppText.get('title')),
             ),
             TextField(
               controller: noteCtrl,
-              decoration: const InputDecoration(labelText: 'Note'),
+              decoration: InputDecoration(labelText: AppText.get('note')),
             ),
             const SizedBox(height: 12),
             Row(
@@ -374,7 +363,7 @@ class _CalendarPageState extends State<CalendarPage> {
 
                 if (mounted) Navigator.pop(context);
               },
-              child: const Text('Save'),
+              child: Text(AppText.get('save')),
             ),
           ],
         ),
@@ -547,8 +536,8 @@ class _CalendarPageState extends State<CalendarPage> {
                             children: [
                               Row(
                                 children: [
-                                  const Text(
-                                    'Reminder',
+                                  Text(
+                                    AppText.get('reminders'),
                                     style: TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 16,
@@ -565,7 +554,9 @@ class _CalendarPageState extends State<CalendarPage> {
                               const SizedBox(height: 6),
                               Expanded(
                                 child: list.isEmpty
-                                    ? const Center(child: Text('No reminder'))
+                                    ? Center(
+                                        child: Text(AppText.get('noReminder')),
+                                      )
                                     : ListView.separated(
                                         itemCount: list.length,
                                         separatorBuilder: (_, __) =>
@@ -673,11 +664,11 @@ class _CalendarPageState extends State<CalendarPage> {
                           bottom: 6,
                         ),
                         child: Row(
-                          children: const [
+                          children: [
                             Expanded(
                               child: Center(
                                 child: Text(
-                                  'Sun',
+                                  AppText.weekday(0),
                                   style: TextStyle(fontWeight: FontWeight.w800),
                                 ),
                               ),
@@ -685,7 +676,7 @@ class _CalendarPageState extends State<CalendarPage> {
                             Expanded(
                               child: Center(
                                 child: Text(
-                                  'Mon',
+                                  AppText.weekday(1),
                                   style: TextStyle(fontWeight: FontWeight.w800),
                                 ),
                               ),
@@ -693,7 +684,7 @@ class _CalendarPageState extends State<CalendarPage> {
                             Expanded(
                               child: Center(
                                 child: Text(
-                                  'Tue',
+                                  AppText.weekday(2),
                                   style: TextStyle(fontWeight: FontWeight.w800),
                                 ),
                               ),
@@ -701,7 +692,7 @@ class _CalendarPageState extends State<CalendarPage> {
                             Expanded(
                               child: Center(
                                 child: Text(
-                                  'Wed',
+                                  AppText.weekday(3),
                                   style: TextStyle(fontWeight: FontWeight.w800),
                                 ),
                               ),
@@ -709,7 +700,7 @@ class _CalendarPageState extends State<CalendarPage> {
                             Expanded(
                               child: Center(
                                 child: Text(
-                                  'Thu',
+                                  AppText.weekday(4),
                                   style: TextStyle(fontWeight: FontWeight.w800),
                                 ),
                               ),
@@ -717,7 +708,7 @@ class _CalendarPageState extends State<CalendarPage> {
                             Expanded(
                               child: Center(
                                 child: Text(
-                                  'Fri',
+                                  AppText.weekday(5),
                                   style: TextStyle(fontWeight: FontWeight.w800),
                                 ),
                               ),
@@ -725,7 +716,7 @@ class _CalendarPageState extends State<CalendarPage> {
                             Expanded(
                               child: Center(
                                 child: Text(
-                                  'Sat',
+                                  AppText.weekday(6),
                                   style: TextStyle(fontWeight: FontWeight.w800),
                                 ),
                               ),

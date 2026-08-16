@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_language.dart';
 import 'data.dart';
 import 'models.dart';
 import 'result_screen.dart';
@@ -89,7 +90,7 @@ class _IngredientSelectScreenState extends State<IngredientSelectScreen> {
                         ),
                         child: Center(
                           child: Text(
-                            "CART",
+                            AppText.get('cart'),
                             style: TextStyle(
                               fontSize: headerText,
                               color: Colors.white,
@@ -129,7 +130,7 @@ class _IngredientSelectScreenState extends State<IngredientSelectScreen> {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      "${ing.name} x$qty",
+                                      "${AppText.name(ing.name)} x$qty",
                                       style: TextStyle(
                                         fontSize: cartText,
                                         fontWeight: FontWeight.w900,
@@ -168,7 +169,10 @@ class _IngredientSelectScreenState extends State<IngredientSelectScreen> {
 
                       ElevatedButton(
                         onPressed: () {
-                          SoundFx.play(SoundFx.gumgum, volume: SoundFx.gumgumVolume);
+                          SoundFx.play(
+                            SoundFx.gumgum,
+                            volume: SoundFx.gumgumVolume,
+                          );
 
                           Navigator.push(
                             context,
@@ -179,7 +183,6 @@ class _IngredientSelectScreenState extends State<IngredientSelectScreen> {
                                 difficulty: widget.difficulty,
                               ),
                             ),
-                            
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -192,7 +195,7 @@ class _IngredientSelectScreenState extends State<IngredientSelectScreen> {
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                        child: const Text("COOK!"),
+                        child: Text(AppText.get('cook')),
                       ),
                     ],
                   ),

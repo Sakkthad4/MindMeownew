@@ -7,7 +7,6 @@ import '../widgets/choice_tile.dart';
 import '../widgets/dice_widget.dart';
 import 'result_page.dart';
 import '../../audio/soundeffect.dart';
-import 'package:flutter_test22/audio/soundeffect.dart';
 
 class GamePage extends StatefulWidget {
   final Difficulty difficulty;

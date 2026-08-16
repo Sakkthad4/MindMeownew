@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../app_language.dart';
 import '../models.dart';
 import '../theme/dicedash_theme.dart';
 import '../widgets/dicedash_bg.dart';
 import 'difficulty_page.dart';
 
 // ✅ เพิ่มเพื่อบันทึกผลลง Hive/Chart
-import '../../chart/chart_store.dart';
+import '../../healthcare/data/chart_store.dart';
 
 class ResultPage extends StatelessWidget {
   final Difficulty difficulty;
@@ -35,10 +36,10 @@ class ResultPage extends StatelessWidget {
 
   String get rankText {
     final acc = accuracyPercent;
-    if (acc >= 90) return "Excellent";
-    if (acc >= 75) return "Good";
-    if (acc >= 55) return "Okay";
-    return "Keep Trying";
+    if (acc >= 90) return AppText.get('excellent');
+    if (acc >= 75) return AppText.get('good');
+    if (acc >= 55) return AppText.get('okay');
+    return AppText.get('keepTrying');
   }
 
   Color _accColor(double acc) {
@@ -98,7 +99,7 @@ class ResultPage extends StatelessWidget {
                             ],
                           ),
                           child: Text(
-                            "Result • $diffLabel",
+                            "${AppText.get('result')} • $diffLabel",
                             style: TextStyle(
                               fontSize: (bigTitle * 0.65).clamp(16.0, 22.0),
                               fontWeight: FontWeight.w900,
@@ -226,7 +227,7 @@ class _AccuracyPanel extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "Accuracy",
+            AppText.get('accuracy'),
             style: TextStyle(
               fontSize: (bigTitle * 0.9).clamp(20.0, 34.0),
               fontWeight: FontWeight.w900,
@@ -321,9 +322,9 @@ class _DetailsPanel extends StatelessWidget {
               ),
             ],
           ),
-          child: const Center(
+          child: Center(
             child: Text(
-              "Details",
+              AppText.get('details'),
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
@@ -352,9 +353,9 @@ class _DetailsPanel extends StatelessWidget {
 
                 Expanded(
                   child: showCount == 0
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            "No data",
+                            AppText.get('noData'),
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w900,
@@ -463,8 +464,8 @@ class _DetailsPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(26),
               ),
             ),
-            child: const Text(
-              "Home",
+            child: Text(
+              AppText.get('home'),
               style: TextStyle(
                 fontSize: 50,
                 fontWeight: FontWeight.w900,
@@ -509,9 +510,9 @@ class _TableHeader extends StatelessWidget {
       child: Row(
         children: [
           head("R", flex: 1),
-          head("Question", flex: 4),
-          head("You", flex: 2),
-          head("Ans", flex: 2),
+          head(AppText.get('question'), flex: 4),
+          head(AppText.get('yourAnswer'), flex: 2),
+          head(AppText.get('answer'), flex: 2),
           head("✓", flex: 1),
         ],
       ),

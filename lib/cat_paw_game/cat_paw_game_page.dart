@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../app_language.dart';
 
-import '../chart/chart_store.dart'; // ✅ ปรับ path ให้ตรงของคุณ
+import '../healthcare/data/chart_store.dart';
 import 'cat_paw_difficulty_screen.dart';
 import 'cat_paw_result_page.dart';
-import '../cat_bond/cat_bond_store.dart';
+import '../healthcare/data/cat_bond_store.dart';
 
 class CatPawGamePage extends StatefulWidget {
   final CatPawDifficulty difficulty;
@@ -318,7 +319,7 @@ class _CatPawGamePageState extends State<CatPawGamePage> {
                                     top: 14,
                                     left: 16,
                                     child: Text(
-                                      "Tap the orange paw fast!",
+                                      AppText.get('tapPaw'),
                                       style: TextStyle(
                                         fontSize: (titleSize * 0.55).clamp(
                                           14.0,

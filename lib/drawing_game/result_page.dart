@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_language.dart';
 import 'models.dart';
 
 class DrawingResultPage extends StatelessWidget {
@@ -18,10 +19,10 @@ class DrawingResultPage extends StatelessWidget {
   static const gray = Color(0xFF666666);
 
   String get resultLabel {
-    if (accuracy >= 90) return "Excellent";
-    if (accuracy >= 70) return "Great";
-    if (accuracy >= 50) return "Keep Going";
-    return "Try Again";
+    if (accuracy >= 90) return AppText.get('excellent');
+    if (accuracy >= 70) return AppText.get('great');
+    if (accuracy >= 50) return AppText.get('keepGoing');
+    return AppText.get('tryAgain');
   }
 
   @override
@@ -42,8 +43,8 @@ class DrawingResultPage extends StatelessWidget {
                   color: orange,
                   borderRadius: BorderRadius.circular(26),
                 ),
-                child: const Text(
-                  "Result",
+                child: Text(
+                  AppText.get('result'),
                   style: TextStyle(
                     fontSize: 42,
                     fontWeight: FontWeight.w900,
@@ -70,8 +71,8 @@ class DrawingResultPage extends StatelessWidget {
                         ),
                         child: Column(
                           children: [
-                            const Text(
-                              "Your Drawing",
+                            Text(
+                              AppText.get('yourDrawing'),
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.w800,
@@ -108,8 +109,8 @@ class DrawingResultPage extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
-                              "Accuracy",
+                            Text(
+                              AppText.get('accuracy'),
                               style: TextStyle(
                                 fontSize: 36,
                                 fontWeight: FontWeight.w800,
@@ -118,7 +119,7 @@ class DrawingResultPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              templateName,
+                              AppText.name(templateName),
                               style: const TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.w700,
@@ -162,14 +163,14 @@ class DrawingResultPage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _actionButton(
-                      label: "Play Again",
+                      label: AppText.get('playAgain'),
                       onTap: () => Navigator.pop(context),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: _actionButton(
-                      label: "Back",
+                      label: AppText.get('back'),
                       onTap: () =>
                           Navigator.popUntil(context, (r) => r.isFirst),
                     ),
@@ -217,9 +218,54 @@ class _DrawPreviewPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // background
+    const padding = 24.0;
     canvas.drawRect(Offset.zero & size, Paint()..color = Colors.white);
 
+    final visiblePoints = points
+        .whereType<StrokePoint>()
+        .where((point) => !point.eraser)
+        .map((point) => point.p)
+        .toList();
+    if (visiblePoints.isEmpty) return;
+
+    var minX = visiblePoints.first.dx;
+    var maxX = visiblePoints.first.dx;
+    var minY = visiblePoints.first.dy;
+    var maxY = visiblePoints.first.dy;
+    for (final point in visiblePoints.skip(1)) {
+      minX = minX < point.dx ? minX : point.dx;
+      maxX = maxX > point.dx ? maxX : point.dx;
+      minY = minY < point.dy ? minY : point.dy;
+      maxY = maxY > point.dy ? maxY : point.dy;
+    }
+
+    final drawingWidth = (maxX - minX).clamp(1.0, double.infinity);
+    final drawingHeight = (maxY - minY).clamp(1.0, double.infinity);
+    final availableWidth = (size.width - padding * 2).clamp(
+      1.0,
+      double.infinity,
+    );
+    final availableHeight = (size.height - padding * 2).clamp(
+      1.0,
+      double.infinity,
+    );
+    final scaleX = availableWidth / drawingWidth;
+    final scaleY = availableHeight / drawingHeight;
+    final scale = scaleX < scaleY ? scaleX : scaleY;
+    final fittedWidth = drawingWidth * scale;
+    final fittedHeight = drawingHeight * scale;
+    final origin = Offset(
+      (size.width - fittedWidth) / 2,
+      (size.height - fittedHeight) / 2,
+    );
+
+    Offset fit(Offset point) => Offset(
+      origin.dx + (point.dx - minX) * scale,
+      origin.dy + (point.dy - minY) * scale,
+    );
+
+    canvas.save();
+    canvas.clipRect(Offset.zero & size);
     final pen = Paint()
       ..color = Colors.black
       ..strokeWidth = 5
@@ -230,8 +276,9 @@ class _DrawPreviewPainter extends CustomPainter {
       final b = points[i + 1];
       if (a == null || b == null) continue;
       if (a.eraser) continue; // preview ไม่โชว์เส้นลบ
-      canvas.drawLine(a.p, b.p, pen);
+      canvas.drawLine(fit(a.p), fit(b.p), pen);
     }
+    canvas.restore();
   }
 
   @override

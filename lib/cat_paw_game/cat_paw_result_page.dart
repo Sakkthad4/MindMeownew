@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_language.dart';
 import 'cat_paw_difficulty_screen.dart';
 
 class CatPawResultPage extends StatelessWidget {
@@ -22,19 +23,19 @@ class CatPawResultPage extends StatelessWidget {
   String get diffLabel {
     switch (difficulty) {
       case CatPawDifficulty.easy:
-        return "Easy";
+        return AppText.get('easy');
       case CatPawDifficulty.normal:
-        return "Normal";
+        return AppText.get('normal');
       case CatPawDifficulty.hard:
-        return "Hard";
+        return AppText.get('hard');
     }
   }
 
   String get rankText {
-    if (accuracyPercent >= 90) return "Excellent";
-    if (accuracyPercent >= 75) return "Good";
-    if (accuracyPercent >= 55) return "Okay";
-    return "Keep Trying";
+    if (accuracyPercent >= 90) return AppText.get('excellent');
+    if (accuracyPercent >= 75) return AppText.get('good');
+    if (accuracyPercent >= 55) return AppText.get('okay');
+    return AppText.get('keepTrying');
   }
 
   @override
@@ -60,8 +61,6 @@ class CatPawResultPage extends StatelessWidget {
             child: LayoutBuilder(
               builder: (context, c) {
                 final w = c.maxWidth;
-                final h = c.maxHeight;
-
                 final bool wide = w >= 900;
 
                 final outerPad = const EdgeInsets.fromLTRB(18, 16, 18, 18);
@@ -97,7 +96,7 @@ class CatPawResultPage extends StatelessWidget {
                               ],
                             ),
                             child: Text(
-                              "Result • $diffLabel",
+                              "${AppText.get('result')} • $diffLabel",
                               style: TextStyle(
                                 fontSize: (bigTitle * 0.65).clamp(16.0, 22.0),
                                 fontWeight: FontWeight.w900,
@@ -226,7 +225,7 @@ class _AccuracyPanel extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "Accuracy",
+            AppText.get('accuracy'),
             style: TextStyle(
               fontSize: (bigTitle * 0.9).clamp(20.0, 34.0),
               fontWeight: FontWeight.w900,
@@ -301,7 +300,7 @@ class _RightPanel extends StatelessWidget {
           children: [
             Expanded(
               child: _MiniStat(
-                title: "HITS",
+                title: AppText.get('hits'),
                 value: hits.toString(),
                 valueColor: const Color(0xFF7ED957),
               ),
@@ -309,7 +308,7 @@ class _RightPanel extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _MiniStat(
-                title: "MISS",
+                title: AppText.get('miss'),
                 value: miss.toString(),
                 valueColor: const Color(0xFFEF5A5A),
               ),
@@ -332,9 +331,9 @@ class _RightPanel extends StatelessWidget {
               ),
             ],
           ),
-          child: const Center(
+          child: Center(
             child: Text(
-              "Total",
+              AppText.get('total'),
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
@@ -357,9 +356,12 @@ class _RightPanel extends StatelessWidget {
           ),
           child: Column(
             children: [
-              _RowKV(label: "Paw Show", value: pawShow.toString()),
+              _RowKV(label: AppText.get('pawShow'), value: pawShow.toString()),
               const SizedBox(height: 18),
-              _RowKV(label: "Total Paw", value: totalPaw.toString()),
+              _RowKV(
+                label: AppText.get('totalPaw'),
+                value: totalPaw.toString(),
+              ),
             ],
           ),
         ),
@@ -383,8 +385,8 @@ class _RightPanel extends StatelessWidget {
                 borderRadius: BorderRadius.circular(26),
               ),
             ),
-            child: const Text(
-              "Home",
+            child: Text(
+              AppText.get('home'),
               style: TextStyle(
                 fontSize: 50,
                 fontWeight: FontWeight.w900,

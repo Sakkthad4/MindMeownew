@@ -1,16 +1,18 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../app_language.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 
-import 'mindtalk_emotion.dart';
+import '../healthcare/data/mindtalk_emotion_store.dart';
+import '../healthcare/models/mindtalk_emotion_event.dart';
 import 'mindtalk_emotion_picker.dart';
 import 'emotion_camera_page.dart';
 import 'mindtalk_audio_router.dart';
-import 'mindtalk_chat.dart';
+import 'mindtalk_ai_service.dart';
+import 'mindtalk_emotion_analyzer.dart';
+import 'mindtalk_language.dart';
 
 enum MindTalkMode {
   fixedOnly, // ใช้ rule อย่างเดียว
@@ -21,37 +23,6 @@ enum MindTalkMode {
 // =============================================================
 // MULTI-LANGUAGE SUPPORT
 // =============================================================
-enum SpeechLang { th, en, zh }
-
-class LangConfig {
-  final String label; // ไทย, EN, 中文
-  final String sttLocale; // th_TH, en_US, zh_CN
-  final String ttsLocale; // th-TH, en-US, zh-CN
-  final String flag;
-  const LangConfig(this.label, this.sttLocale, this.ttsLocale, this.flag);
-}
-
-const Map<SpeechLang, LangConfig> kLangs = {
-  SpeechLang.th: LangConfig('ไทย', 'th_TH', 'th-TH', '🇹🇭'),
-  SpeechLang.en: LangConfig('EN', 'en_US', 'en-US', '🇬🇧'),
-  SpeechLang.zh: LangConfig('中文', 'zh_CN', 'zh-CN', '🇨🇳'),
-};
-
-const String _systemPrompt = '''
-คุณคือแมวน้อยแสนน่ารัก ชื่อ "เหมียว"
-พูดจาอบอุ่น เป็นมิตร
-
-⚡ สำคัญ: ตอบเป็น "ภาษาเดียวกับที่ผู้ใช้พูด" เสมอ
-- ถ้าผู้ใช้พูดไทย → ตอบไทย
-- ถ้าผู้ใช้พูดอังกฤษ → ตอบอังกฤษ
-- ถ้าผู้ใช้พูดจีน (中文) → ตอบจีน
-
-ตอบสั้น กระชับ ถ้าผู้ใช้เศร้าให้ปลอบ ถ้าดีใจให้ชื่นชม
-ห้ามตอบเชิงเทคนิคจนเกินไป ถ้าเขาถามสาระต้องตอบให้ตรงประเด็น
-ไม่ตอบอะไรที่อันตรายหรือสื่อถึงความอันตรายซึ่งนำไปถึงแก่ชีวิตและทรัพย์สิน
-สร้างความสุขและกำลังใจ
-''';
-
 class MindTalkPage extends StatefulWidget {
   const MindTalkPage({super.key});
 
@@ -63,10 +34,11 @@ class _MindTalkPageState extends State<MindTalkPage> {
   // ---------------- Colors ----------------
   static const orange = Color(0xFFFFA726);
   static const blueBorder = Color(0xFF6BB8FF);
-  static const textGray = Color(0xFF5F5F5F);
   static const greenMood = Color(0xFF7ED957);
 
-  final MindTalkMode _mode = MindTalkMode.auto;
+  // Use Gemini for the whole conversation so even greetings and short replies
+  // can take the preceding context into account.
+  final MindTalkMode _mode = MindTalkMode.aiOnly;
 
   // ---------------- LANGUAGE ----------------
   SpeechLang _currentLang = SpeechLang.th;
@@ -80,34 +52,45 @@ class _MindTalkPageState extends State<MindTalkPage> {
   // ---------------- TTS + AI ----------------
   final FlutterTts _tts = FlutterTts();
   final MindTalkAudioRouter _audioRouter = MindTalkAudioRouter();
-  final String geminiApiKey = 'AIzaSyBfypAHz9lv62YWO__HM85Rb3JMCLoUn3g';
+  final MindTalkAiService _ai = MindTalkAiService();
+  final MindTalkEmotionStore _emotionStore = MindTalkEmotionStore();
+  final MindTalkEmotionAnalyzer _emotionAnalyzer = MindTalkEmotionAnalyzer();
+  final String _emotionSessionId = DateTime.now().microsecondsSinceEpoch
+      .toString();
+  bool _processing = false;
 
   // ---------------- ESP32 CAM ----------------
-  bool useEsp32Cam = true;
+  bool useEsp32Cam = false;
   final espIpCtrl = TextEditingController(text: '192.168.43.123');
 
   // ---------------- Chat ----------------
-  final List<_Msg> _msgs = [_Msg.bot("Hello How are you today")];
-  final List<_Msg> _initialMsgs = [_Msg.bot("Hello How are you today")];
+  final List<_Msg> _msgs = [_Msg.bot(mindTalkGreeting(SpeechLang.th))];
   final _scrollCtrl = ScrollController();
 
   // ---------------- Emotion ----------------
   DetectedEmotion _userEmotion = DetectedEmotion.neutral;
-  CatEmotion _catEmotion = CatEmotion.calm;
 
   // =============================================================
 
   @override
   void initState() {
     super.initState();
+    _currentLang = switch (AppLanguageController.current.value) {
+      AppLanguage.thai => SpeechLang.th,
+      AppLanguage.chinese => SpeechLang.zh,
+      AppLanguage.english => SpeechLang.en,
+    };
+    _msgs
+      ..clear()
+      ..add(_Msg.bot(mindTalkGreeting(_currentLang)));
     _initStt();
     _setupTts();
   }
 
   Future<void> _setupTts() async {
     await _tts.setVolume(1.0);
-    await _tts.setSpeechRate(0.5);
-    await _tts.setPitch(1.1);
+    await _tts.awaitSpeakCompletion(true);
+    await _tts.setPitch(1.0);
   }
 
   Future<void> _initStt() async {
@@ -133,36 +116,35 @@ class _MindTalkPageState extends State<MindTalkPage> {
   /// ตั้งภาษาให้ TTS ก่อนพูดทุกครั้ง
   Future<void> _speak(String text) async {
     if (text.trim().isEmpty) return;
+    final config = kLangs[_currentLang]!;
     try {
-      await _tts.setLanguage(kLangs[_currentLang]!.ttsLocale);
+      await _tts.stop();
+      await _tts.setLanguage(config.ttsLocale);
+      await _tts.setSpeechRate(config.speechRate);
     } catch (e) {
       debugPrint('TTS setLanguage failed: $e');
     }
-    await _tts.speak(text);
+    await _tts.speak(_speechFriendly(text));
   }
 
-  /// ข้อความ fallback ตามภาษาปัจจุบัน
-  String _fallbackError() {
-    switch (_currentLang) {
-      case SpeechLang.en:
-        return "I'm a bit confused right now 🐱";
-      case SpeechLang.zh:
-        return "我现在有点糊涂了 🐱";
-      case SpeechLang.th:
-        return "เหมียวงงไปนิดนึงค่ะ 🐱";
-    }
-  }
+  String _speechFriendly(String text) => text
+      .replaceAll(RegExp(r'[*_#`>]'), '')
+      .replaceAll(RegExp(r'https?://\S+'), '')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 
   // =============================================================
   // 🎤 MIC BUTTON
   // =============================================================
   Future<void> _toggleMic() async {
+    if (_processing) return;
     if (!_sttReady) {
       await _initStt();
       if (!_sttReady) return;
     }
 
     if (!_listening) {
+      await _tts.stop();
       setState(() {
         _partial = "";
         _listening = true;
@@ -186,6 +168,7 @@ class _MindTalkPageState extends State<MindTalkPage> {
 
       if (said.isNotEmpty) {
         _addUserMessage(said);
+        _recordConversationEmotion();
         await _handleUserText(said);
       }
     }
@@ -208,58 +191,28 @@ class _MindTalkPageState extends State<MindTalkPage> {
     }
   }
 
-  Future<String> _askGemini(String prompt) async {
+  Future<String> _askGemini(String userText) async {
     try {
-      final uri = Uri.parse(
-        "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent"
-        "?key=$geminiApiKey",
+      final history = _msgs
+          .take(_msgs.length - 1)
+          .map((msg) => (isUser: !msg.isBot, text: msg.text))
+          .toList();
+      return await _ai.reply(
+        userText: userText,
+        language: _currentLang,
+        history: history,
       );
-
-      final body = {
-        "contents": [
-          {
-            "role": "user",
-            "parts": [
-              {"text": prompt},
-            ],
-          },
-        ],
-        "generationConfig": {
-          "temperature": 0.5,
-          "topP": 0.95,
-          "topK": 64,
-          "maxOutputTokens": 500,
-        },
-      };
-
-      final resp = await http.post(
-        uri,
-        headers: const {"Content-Type": "application/json"},
-        body: jsonEncode(body),
-      );
-
-      debugPrint("GEMINI STATUS: ${resp.statusCode}");
-
-      if (resp.statusCode != 200) {
-        debugPrint("GEMINI BODY: ${resp.body}");
-        return _fallbackError();
-      }
-
-      final data = jsonDecode(resp.body);
-      final candidates = data["candidates"];
-      if (candidates == null || candidates.isEmpty) {
-        return _fallbackError();
-      }
-
-      final parts = candidates[0]["content"]?["parts"];
-      if (parts == null || parts.isEmpty) {
-        return _fallbackError();
-      }
-
-      return parts[0]["text"]?.toString().trim() ?? _fallbackError();
     } catch (e) {
       debugPrint("GEMINI ERROR: $e");
-      return _fallbackError();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gemini: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return mindTalkFallback(_currentLang);
     }
   }
 
@@ -279,6 +232,39 @@ class _MindTalkPageState extends State<MindTalkPage> {
     _scrollToBottom();
   }
 
+  void _recordConversationEmotion() {
+    final recentUserMessages = _msgs
+        .where((message) => !message.isBot)
+        .map((message) => message.text)
+        .toList();
+    final result = _emotionAnalyzer.analyze(recentUserMessages);
+    unawaited(
+      _emotionStore.record(
+        emotion: result.emotion,
+        source: MindTalkEmotionSource.conversation,
+        confidence: result.confidence,
+        sessionId: _emotionSessionId,
+      ),
+    );
+  }
+
+  void _recordCameraEmotion(CameraEmotionObservation observation) {
+    final emotion = switch (observation.emotion) {
+      DetectedEmotion.happy => MindTalkEmotion.happy,
+      DetectedEmotion.sad => MindTalkEmotion.sad,
+      DetectedEmotion.neutral => MindTalkEmotion.neutral,
+    };
+    setState(() => _userEmotion = observation.emotion);
+    unawaited(
+      _emotionStore.record(
+        emotion: emotion,
+        source: MindTalkEmotionSource.camera,
+        confidence: observation.confidence,
+        sessionId: _emotionSessionId,
+      ),
+    );
+  }
+
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 80), () {
       if (_scrollCtrl.hasClients) {
@@ -295,7 +281,7 @@ class _MindTalkPageState extends State<MindTalkPage> {
     setState(() {
       _msgs
         ..clear()
-        ..addAll(_initialMsgs);
+        ..add(_Msg.bot(mindTalkGreeting(_currentLang)));
       _partial = "";
       _listening = false;
     });
@@ -307,6 +293,8 @@ class _MindTalkPageState extends State<MindTalkPage> {
   void dispose() {
     _stt.stop();
     _tts.stop();
+    _ai.dispose();
+    espIpCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }
@@ -315,7 +303,7 @@ class _MindTalkPageState extends State<MindTalkPage> {
     final fixed = _audioRouter.tryRoute(userText);
 
     if (fixed == null) {
-      final msg = _fallbackError();
+      final msg = mindTalkFallback(_currentLang);
       _addBotMessage(msg);
       await _speak(msg);
       return;
@@ -326,19 +314,7 @@ class _MindTalkPageState extends State<MindTalkPage> {
   }
 
   Future<void> _handleAiOnly(String userText) async {
-    final langName = kLangs[_currentLang]!.label;
-    final prompt =
-        '''
-$_systemPrompt
-
-ผู้ใช้กำลังพูดภาษา: $langName
-ผู้ใช้พูดว่า:
-$userText
-''';
-
-    final aiReply = await _askGemini(prompt);
-    _addBotMessage(aiReply);
-    await _speak(aiReply);
+    await _replyWithAi(userText);
   }
 
   Future<void> _handleAuto(String userText) async {
@@ -350,19 +326,20 @@ $userText
       return;
     }
 
-    final langName = kLangs[_currentLang]!.label;
-    final prompt =
-        '''
-$_systemPrompt
+    await _replyWithAi(userText);
+  }
 
-ผู้ใช้กำลังพูดภาษา: $langName
-ผู้ใช้พูดว่า:
-$userText
-''';
-
-    final aiReply = await _askGemini(prompt);
-    _addBotMessage(aiReply);
-    await _speak(aiReply);
+  Future<void> _replyWithAi(String userText) async {
+    if (_processing) return;
+    setState(() => _processing = true);
+    try {
+      final aiReply = await _askGemini(userText);
+      if (!mounted) return;
+      _addBotMessage(aiReply);
+      await _speak(aiReply);
+    } finally {
+      if (mounted) setState(() => _processing = false);
+    }
   }
 
   // =============================================================
@@ -390,7 +367,7 @@ $userText
               Positioned.fill(
                 child: ColorFiltered(
                   colorFilter: ColorFilter.mode(
-                    Colors.white.withOpacity(0.35),
+                    Colors.white.withValues(alpha: 0.35),
                     BlendMode.darken,
                   ),
                   child: Image.asset(
@@ -403,7 +380,7 @@ $userText
               Positioned.fromRect(
                 rect: titleRect,
                 child: Text(
-                  "Conversation",
+                  AppText.get('conversation'),
                   style: TextStyle(
                     fontSize: w * 0.055,
                     fontWeight: FontWeight.w900,
@@ -420,11 +397,15 @@ $userText
                   current: _currentLang,
                   onChanged: (lang) async {
                     if (_listening) await _stt.stop();
+                    await _tts.stop();
                     if (!mounted) return;
                     setState(() {
                       _currentLang = lang;
                       _listening = false;
                       _partial = "";
+                      _msgs
+                        ..clear()
+                        ..add(_Msg.bot(mindTalkGreeting(lang)));
                     });
                   },
                 ),
@@ -458,8 +439,7 @@ $userText
                       child: useEsp32Cam
                           ? Esp32CamStreamView(ip: espIpCtrl.text.trim())
                           : EmotionCameraPage(
-                              onEmotionDetected: (e) =>
-                                  setState(() => _userEmotion = e),
+                              onEmotionDetected: _recordCameraEmotion,
                             ),
                     ),
                   ],
@@ -498,7 +478,11 @@ $userText
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      _listening ? Icons.stop : Icons.mic,
+                      _processing
+                          ? Icons.hourglass_top
+                          : _listening
+                          ? Icons.stop
+                          : Icons.mic,
                       size: w * 0.06,
                       color: Colors.white,
                     ),
@@ -508,12 +492,7 @@ $userText
 
               Positioned.fromRect(
                 rect: actionsRect,
-                child: _ActionPanelImages(
-                  w: w,
-                  onEmotionSelected: (emo) {
-                    setState(() => _catEmotion = emo);
-                  },
-                ),
+                child: _ActionPanelImages(w: w),
               ),
 
               Positioned(
@@ -528,7 +507,7 @@ $userText
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: orange, width: 4),
                     ),
-                    child: const Text("Reset"),
+                    child: Text(AppText.get('reset')),
                   ),
                 ),
               ),
@@ -559,7 +538,7 @@ class _LangSwitcher extends StatelessWidget {
         border: Border.all(color: _MindTalkPageState.orange, width: 3),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -666,9 +645,8 @@ class _BubbleRow extends StatelessWidget {
 
 class _ActionPanelImages extends StatelessWidget {
   final double w;
-  final ValueChanged<CatEmotion> onEmotionSelected;
 
-  const _ActionPanelImages({required this.w, required this.onEmotionSelected});
+  const _ActionPanelImages({required this.w});
 
   @override
   Widget build(BuildContext context) {
@@ -781,7 +759,7 @@ class _Esp32CamStreamViewState extends State<Esp32CamStreamView> {
     return VlcPlayer(
       controller: _ctl,
       aspectRatio: 1,
-      placeholder: const Center(child: Text('Connecting...')),
+      placeholder: Center(child: Text(AppText.get('connecting'))),
     );
   }
 }

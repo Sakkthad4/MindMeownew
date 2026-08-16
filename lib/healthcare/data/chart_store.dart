@@ -1,8 +1,10 @@
-import 'package:hive/hive.dart';
-import '../data/models/game_result.dart';
+import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import '../models/game_result.dart';
 
 class ChartStore {
-  ChartStore({Box<GameResult>? box}) : _box = box ?? Hive.box<GameResult>('results');
+  ChartStore({Box<GameResult>? box})
+    : _box = box ?? Hive.box<GameResult>('results');
 
   final Box<GameResult> _box;
 
@@ -29,6 +31,8 @@ class ChartStore {
   }
 
   Future<void> clearAll() => _box.clear();
+
+  ValueListenable<Box<GameResult>> listenable() => _box.listenable();
 
   static Future<void> init() async {
     // มีไว้ให้ main.dart เรียกได้ (ตอนนี้ไม่ต้องทำอะไร)

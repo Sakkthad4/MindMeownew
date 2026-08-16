@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../app_language.dart';
 
 import 'data.dart';
 import 'models.dart';
@@ -76,11 +77,11 @@ class _OrderBriefScreenState extends State<OrderBriefScreen> {
   String _difficultyLabel() {
     switch (widget.difficulty) {
       case Difficulty.easy:
-        return "Easy";
+        return AppText.get('easy');
       case Difficulty.normal:
-        return "Normal";
+        return AppText.get('normal');
       case Difficulty.hard:
-        return "Hard";
+        return AppText.get('hard');
     }
   }
 
@@ -180,7 +181,7 @@ class _OrderBriefScreenState extends State<OrderBriefScreen> {
                                 borderRadius: BorderRadius.circular(22),
                               ),
                               child: Text(
-                                widget.order.name,
+                                AppText.name(widget.order.name),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -192,7 +193,7 @@ class _OrderBriefScreenState extends State<OrderBriefScreen> {
                             ),
                             const SizedBox(height: 10),
                             Text(
-                              "Difficulty: ${_difficultyLabel()}",
+                              "${AppText.get('difficulty')}: ${_difficultyLabel()}",
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: (w / 44).clamp(14.0, 18.0),
@@ -223,7 +224,7 @@ class _OrderBriefScreenState extends State<OrderBriefScreen> {
                         child: Column(
                           children: [
                             Text(
-                              "MEMORIZE TIME",
+                              AppText.get('memorizeTime'),
                               style: TextStyle(
                                 fontSize: (w / 42).clamp(16.0, 20.0),
                                 fontWeight: FontWeight.w900,
@@ -256,7 +257,7 @@ class _OrderBriefScreenState extends State<OrderBriefScreen> {
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
-                                child: const Text("Start Shopping"),
+                                child: Text(AppText.get('startShopping')),
                               ),
                             ),
                           ],
@@ -366,7 +367,7 @@ class _OrderBriefScreenState extends State<OrderBriefScreen> {
                                         const SizedBox(width: 16),
                                         Expanded(
                                           child: Text(
-                                            ing.name,
+                                            AppText.name(ing.name),
                                             style: TextStyle(
                                               fontSize: rowName,
                                               fontWeight: FontWeight.w900,

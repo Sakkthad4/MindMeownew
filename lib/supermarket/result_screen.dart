@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test22/chart/chart_store.dart';
+import '../app_language.dart';
+import 'package:flutter_test22/healthcare/data/chart_store.dart';
 
 import 'data.dart';
 import 'models.dart';
@@ -82,10 +83,10 @@ class _ResultScreenState extends State<ResultScreen> {
 
     // ✅ rank + color
     final String label = percent >= 80
-        ? "Good"
+        ? AppText.get('good')
         : percent >= 50
-        ? "Okay"
-        : "Try Again";
+        ? AppText.get('okay')
+        : AppText.get('tryAgain');
 
     final Color accColor = percent >= 80
         ? const Color(0xFF7BC043) // green
@@ -161,7 +162,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                       borderRadius: BorderRadius.circular(24),
                                     ),
                                     child: Text(
-                                      widget.order.name,
+                                      AppText.name(widget.order.name),
                                       style: TextStyle(
                                         fontSize: 30 * SM.scale(context),
                                         fontWeight: FontWeight.w900,
@@ -208,7 +209,10 @@ class _ResultScreenState extends State<ResultScreen> {
                                 padding: const EdgeInsets.all(22),
                                 child: Column(
                                   children: [
-                                    SM.orangeHeaderPill(context, "Requirement"),
+                                    SM.orangeHeaderPill(
+                                      context,
+                                      AppText.get('requirement'),
+                                    ),
                                     const SizedBox(height: 18),
                                     Expanded(
                                       child: ListView.separated(
@@ -222,7 +226,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                           final ing = ingredientById(id);
 
                                           return _ReqLine(
-                                            name: ing.name,
+                                            name: AppText.name(ing.name),
                                             asset: ing.asset,
                                             reqQty: reqQty,
                                             gotQty: got,
@@ -263,7 +267,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                         final ing = ingredientById(id);
 
                                         return _CollectedChip(
-                                          label: ing.name,
+                                          label: AppText.name(ing.name),
                                           asset: ing.asset,
                                           qty: qty,
                                           status: status,
@@ -295,7 +299,7 @@ class _ResultScreenState extends State<ResultScreen> {
                                         );
                                       },
 
-                                      child: const Text("Home"),
+                                      child: Text(AppText.get('home')),
                                     ),
                                   ),
                                 ],
@@ -353,7 +357,7 @@ class _AccuracyPanel extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "Accuracy",
+              AppText.get('accuracy'),
               style: TextStyle(
                 fontSize: (bigTitle * 0.9).clamp(20.0, 34.0),
                 fontWeight: FontWeight.w900,
@@ -437,8 +441,8 @@ class _ReqLine extends StatelessWidget {
     final String badgeText = ok
         ? "OK"
         : missing
-        ? "Missing"
-        : "Extra";
+        ? AppText.get('missing')
+        : AppText.get('extra');
 
     return Container(
       height: 120,
@@ -553,7 +557,7 @@ class _CollectedChip extends StatelessWidget {
     return Container(
       width: 160,
       decoration: BoxDecoration(
-        color: bg.withOpacity(0.18),
+        color: bg.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(34),
         border: Border.all(color: border, width: 6),
       ),
@@ -564,7 +568,7 @@ class _CollectedChip extends StatelessWidget {
               width: 110,
               height: 110,
               decoration: BoxDecoration(
-                color: bg.withOpacity(0.35),
+                color: bg.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(28),
               ),
               padding: const EdgeInsets.all(14),

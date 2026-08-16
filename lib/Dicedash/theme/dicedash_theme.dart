@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 const kDiceDashOrange = Colors.orange;
 const kDiceDashOrangeDark = Color(0xFFF57C00);
 
@@ -36,7 +35,10 @@ ThemeData diceDashTheme(BuildContext context) {
     ),
     textTheme: Theme.of(context).textTheme.copyWith(
       displaySmall: const TextStyle(fontSize: 44, fontWeight: FontWeight.w900),
-      headlineMedium: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900),
+      headlineMedium: const TextStyle(
+        fontSize: 34,
+        fontWeight: FontWeight.w900,
+      ),
       headlineSmall: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
       titleLarge: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
       titleMedium: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),

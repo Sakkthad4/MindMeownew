@@ -10,14 +10,14 @@ class DiceDashBG extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(
-          child: Image.asset(
-            'assets/bg/dicedash_bg.png',
-            fit: BoxFit.cover,
-          ),
+          child: Image.asset('assets/bg/dicedash_bg.png', fit: BoxFit.cover),
         ),
         Positioned.fill(
           child: Container(
-            color: alphaColor(Colors.white, 0.45), // ให้เหมือนภาพ (ขาว แต่ยังเห็นลาย)
+            color: alphaColor(
+              Colors.white,
+              0.45,
+            ), // ให้เหมือนภาพ (ขาว แต่ยังเห็นลาย)
           ),
         ),
         child,

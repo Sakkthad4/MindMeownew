@@ -14,7 +14,7 @@ const ingredients = <Ingredient>[
   ),
   Ingredient(id: 'rice', name: 'Rice', asset: 'assets/ing/rice.png'),
   Ingredient(id: 'bread', name: 'Bread', asset: 'assets/ing/bread.png'),
-  
+
   //veg.
   Ingredient(id: 'carrot', name: 'Carrot', asset: 'assets/ing/carrot.png'),
   Ingredient(

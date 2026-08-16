@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../app_language.dart';
 
 import 'data.dart';
 import 'models.dart';
@@ -180,7 +181,9 @@ class _GachaScreenState extends State<GachaScreen> {
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Text(
-                              _current?.name ?? "Menu",
+                              _current == null
+                                  ? AppText.get('menu')
+                                  : AppText.name(_current!.name),
                               style: TextStyle(
                                 fontSize: 30 * scale,
                                 fontWeight: FontWeight.w900,
@@ -202,7 +205,9 @@ class _GachaScreenState extends State<GachaScreen> {
                         style: SM.bigOrangeBtn(context),
                         icon: const Icon(Icons.casino, size: 25),
                         label: Text(
-                          _rolling ? "Rolling..." : "Roll",
+                          _rolling
+                              ? AppText.get('rolling')
+                              : AppText.get('roll'),
                           style: TextStyle(
                             fontSize: 30 * scale,
                             fontWeight: FontWeight.w900,

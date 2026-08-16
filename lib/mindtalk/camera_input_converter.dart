@@ -12,18 +12,15 @@ class CameraInputConverter {
     // รวม bytes ทุก plane แบบไม่ใช้ WriteBuffer
     final bytes = _concatenatePlanes(image.planes);
 
-    final imageSize = Size(
-      image.width.toDouble(),
-      image.height.toDouble(),
-    );
+    final imageSize = Size(image.width.toDouble(), image.height.toDouble());
 
     final rotation =
         InputImageRotationValue.fromRawValue(camera.sensorOrientation) ??
-            InputImageRotation.rotation0deg;
+        InputImageRotation.rotation0deg;
 
     final format =
         InputImageFormatValue.fromRawValue(image.format.raw) ??
-            InputImageFormat.nv21;
+        InputImageFormat.nv21;
 
     // ✅ ใช้ metadata แบบที่รองรับกว้าง (ไม่มี planeData)
     final metadata = InputImageMetadata(
@@ -33,10 +30,7 @@ class CameraInputConverter {
       bytesPerRow: image.planes.first.bytesPerRow,
     );
 
-    return InputImage.fromBytes(
-      bytes: bytes,
-      metadata: metadata,
-    );
+    return InputImage.fromBytes(bytes: bytes, metadata: metadata);
   }
 
   static Uint8List _concatenatePlanes(List<Plane> planes) {

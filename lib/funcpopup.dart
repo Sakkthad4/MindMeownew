@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_language.dart';
 
 class FuncPopup extends StatelessWidget {
   final String title;
@@ -50,13 +51,13 @@ class FuncPopup extends StatelessWidget {
                 // ✅ GO
                 InkWell(
                   onTap: onGo, // ❌ ไม่ pop ที่นี่แล้ว
-                  child: _btn("GO!", Colors.orange),
+                  child: _btn(AppText.get('go'), Colors.orange),
                 ),
 
                 // ✅ CANCEL
                 InkWell(
                   onTap: onCancel, // ❌ ไม่ pop ที่นี่แล้ว
-                  child: _btn("Cancel", Colors.redAccent),
+                  child: _btn(AppText.get('cancel'), Colors.redAccent),
                 ),
               ],
             ),

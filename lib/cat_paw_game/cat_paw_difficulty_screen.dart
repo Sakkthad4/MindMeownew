@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'cat_paw_game_page.dart';
+import '../app_language.dart';
 
 enum CatPawDifficulty { easy, normal, hard }
 
@@ -23,10 +24,13 @@ class CatPawDifficultyScreen extends StatelessWidget {
             child: Image.asset(
               "assets/bg/catpaw_bg.png",
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: const Color(0xFFFFF7F0)),
+              errorBuilder: (_, __, ___) =>
+                  Container(color: const Color(0xFFFFF7F0)),
             ),
           ),
-          Positioned.fill(child: Container(color: Colors.white.withValues(alpha: 0.12))),
+          Positioned.fill(
+            child: Container(color: Colors.white.withValues(alpha: 0.12)),
+          ),
 
           SafeArea(
             child: LayoutBuilder(
@@ -68,7 +72,9 @@ class CatPawDifficultyScreen extends StatelessWidget {
                   required String imageAsset,
                   required VoidCallback onTap,
                 }) {
-                  final double imgBox = wide ? cardW * imgScaleWide : cardH * imgScaleNarrow;
+                  final double imgBox = wide
+                      ? cardW * imgScaleWide
+                      : cardH * imgScaleNarrow;
 
                   return InkWell(
                     onTap: onTap,
@@ -80,7 +86,10 @@ class CatPawDifficultyScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: const Color(0xFFFF9800), width: 8),
+                        border: Border.all(
+                          color: const Color(0xFFFF9800),
+                          width: 8,
+                        ),
                         boxShadow: const [
                           BoxShadow(
                             color: Color(0x22000000),
@@ -158,7 +167,10 @@ class CatPawDifficultyScreen extends StatelessWidget {
                       height: headerH,
                       child: Center(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 40,
+                            vertical: 14,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFF9800),
                             borderRadius: BorderRadius.circular(34),
@@ -171,7 +183,7 @@ class CatPawDifficultyScreen extends StatelessWidget {
                             ],
                           ),
                           child: Text(
-                            "Reaction Time Game",
+                            AppText.get('reactionGame'),
                             style: TextStyle(
                               fontSize: titleSize,
                               fontWeight: FontWeight.w900,
@@ -191,44 +203,54 @@ class CatPawDifficultyScreen extends StatelessWidget {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   diffCard(
-                                    label: "Easy",
+                                    label: AppText.get('easy'),
                                     imageAsset: "assets/difficulty/easy.png",
-                                    onTap: () => _go(context, CatPawDifficulty.easy),
+                                    onTap: () =>
+                                        _go(context, CatPawDifficulty.easy),
                                   ),
                                   SizedBox(width: gapBetweenCardsWide),
                                   diffCard(
-                                    label: "Normal",
+                                    label: AppText.get('normal'),
                                     imageAsset: "assets/difficulty/normal.png",
-                                    onTap: () => _go(context, CatPawDifficulty.normal),
+                                    onTap: () =>
+                                        _go(context, CatPawDifficulty.normal),
                                   ),
                                   SizedBox(width: gapBetweenCardsWide),
                                   diffCard(
-                                    label: "Hard",
+                                    label: AppText.get('hard'),
                                     imageAsset: "assets/difficulty/hard.png",
-                                    onTap: () => _go(context, CatPawDifficulty.hard),
+                                    onTap: () =>
+                                        _go(context, CatPawDifficulty.hard),
                                   ),
                                 ],
                               )
                             : SingleChildScrollView(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
                                 child: Column(
                                   children: [
                                     diffCard(
-                                      label: "Easy",
+                                      label: AppText.get('easy'),
                                       imageAsset: "assets/difficulty/easy.png",
-                                      onTap: () => _go(context, CatPawDifficulty.easy),
+                                      onTap: () =>
+                                          _go(context, CatPawDifficulty.easy),
                                     ),
                                     SizedBox(height: gapBetweenCardsNarrow),
                                     diffCard(
-                                      label: "Normal",
-                                      imageAsset: "assets/difficulty/normal.png",
-                                      onTap: () => _go(context, CatPawDifficulty.normal),
+                                      label: AppText.get('normal'),
+                                      imageAsset:
+                                          "assets/difficulty/normal.png",
+                                      onTap: () =>
+                                          _go(context, CatPawDifficulty.normal),
                                     ),
                                     SizedBox(height: gapBetweenCardsNarrow),
                                     diffCard(
-                                      label: "Hard",
+                                      label: AppText.get('hard'),
                                       imageAsset: "assets/difficulty/hard.png",
-                                      onTap: () => _go(context, CatPawDifficulty.hard),
+                                      onTap: () =>
+                                          _go(context, CatPawDifficulty.hard),
                                     ),
                                   ],
                                 ),

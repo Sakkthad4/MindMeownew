@@ -10,7 +10,9 @@ class DiceDashScope extends InheritedWidget {
   });
 
   // ✅ fallback กันพัง ถ้าไม่ได้ครอบ DiceDashShell
-  static final ValueNotifier<bool> _fallbackLargeText = ValueNotifier<bool>(true);
+  static final ValueNotifier<bool> _fallbackLargeText = ValueNotifier<bool>(
+    true,
+  );
 
   /// ใช้ตัวนี้แทน of(context)
   static ValueNotifier<bool> largeTextOf(BuildContext context) {
@@ -19,7 +21,8 @@ class DiceDashScope extends InheritedWidget {
   }
 
   @override
-  bool updateShouldNotify(DiceDashScope oldWidget) => oldWidget.largeText != largeText;
+  bool updateShouldNotify(DiceDashScope oldWidget) =>
+      oldWidget.largeText != largeText;
 }
 
 class DiceDashShell extends StatefulWidget {

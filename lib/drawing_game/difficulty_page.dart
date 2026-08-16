@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../audio/bgm_scope.dart';
 import 'game_page.dart';
+import '../app_language.dart';
 
 enum DrawingDifficulty { easy, normal, hard }
 
@@ -30,7 +31,7 @@ class DrawingDifficultyPage extends StatelessWidget {
             ),
             // overlay จาง
             Positioned.fill(
-              child: Container(color: Colors.white.withOpacity(0.12)),
+              child: Container(color: Colors.white.withValues(alpha: 0.12)),
             ),
 
             SafeArea(
@@ -79,8 +80,9 @@ class DrawingDifficultyPage extends StatelessWidget {
                     required String imageAsset,
                     required VoidCallback onTap,
                   }) {
-                    final double imgBox =
-                        wide ? cardW * imgScaleWide : cardH * imgScaleNarrow;
+                    final double imgBox = wide
+                        ? cardW * imgScaleWide
+                        : cardH * imgScaleNarrow;
 
                     return InkWell(
                       onTap: onTap,
@@ -118,10 +120,10 @@ class DrawingDifficultyPage extends StatelessWidget {
                                         fit: BoxFit.contain,
                                         errorBuilder: (_, __, ___) =>
                                             const Icon(
-                                          Icons.pets,
-                                          size: 96,
-                                          color: Colors.black26,
-                                        ),
+                                              Icons.pets,
+                                              size: 96,
+                                              color: Colors.black26,
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -148,10 +150,10 @@ class DrawingDifficultyPage extends StatelessWidget {
                                         fit: BoxFit.contain,
                                         errorBuilder: (_, __, ___) =>
                                             const Icon(
-                                          Icons.pets,
-                                          size: 80,
-                                          color: Colors.black26,
-                                        ),
+                                              Icons.pets,
+                                              size: 80,
+                                              color: Colors.black26,
+                                            ),
                                       ),
                                     ),
                                   ),
@@ -194,7 +196,7 @@ class DrawingDifficultyPage extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              "Drawing Game", // เปลี่ยนชื่อจาก Memory Game
+                              AppText.get('drawingGame'),
                               style: TextStyle(
                                 fontSize: titleSize,
                                 fontWeight: FontWeight.w900,
@@ -214,26 +216,28 @@ class DrawingDifficultyPage extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     diffCard(
-                                      label: "Easy",
+                                      label: AppText.get('easy'),
                                       // ใช้รูปแมวแบบที่คุณส่ง
                                       imageAsset: "assets/difficulty/easy.png",
-                                      onTap: () => _go(
-                                          context, DrawingDifficulty.easy),
+                                      onTap: () =>
+                                          _go(context, DrawingDifficulty.easy),
                                     ),
                                     SizedBox(width: gapBetweenCardsWide),
                                     diffCard(
-                                      label: "Normal",
+                                      label: AppText.get('normal'),
                                       imageAsset:
                                           "assets/difficulty/normal.png",
                                       onTap: () => _go(
-                                          context, DrawingDifficulty.normal),
+                                        context,
+                                        DrawingDifficulty.normal,
+                                      ),
                                     ),
                                     SizedBox(width: gapBetweenCardsWide),
                                     diffCard(
-                                      label: "Hard",
+                                      label: AppText.get('hard'),
                                       imageAsset: "assets/difficulty/hard.png",
-                                      onTap: () => _go(
-                                          context, DrawingDifficulty.hard),
+                                      onTap: () =>
+                                          _go(context, DrawingDifficulty.hard),
                                     ),
                                   ],
                                 )
@@ -245,27 +249,33 @@ class DrawingDifficultyPage extends StatelessWidget {
                                   child: Column(
                                     children: [
                                       diffCard(
-                                        label: "Easy",
+                                        label: AppText.get('easy'),
                                         imageAsset:
                                             "assets/difficulty/easy.png",
                                         onTap: () => _go(
-                                            context, DrawingDifficulty.easy),
+                                          context,
+                                          DrawingDifficulty.easy,
+                                        ),
                                       ),
                                       SizedBox(height: gapBetweenCardsNarrow),
                                       diffCard(
-                                        label: "Normal",
+                                        label: AppText.get('normal'),
                                         imageAsset:
                                             "assets/difficulty/normal.png",
                                         onTap: () => _go(
-                                            context, DrawingDifficulty.normal),
+                                          context,
+                                          DrawingDifficulty.normal,
+                                        ),
                                       ),
                                       SizedBox(height: gapBetweenCardsNarrow),
                                       diffCard(
-                                        label: "Hard",
+                                        label: AppText.get('hard'),
                                         imageAsset:
                                             "assets/difficulty/hard.png",
                                         onTap: () => _go(
-                                            context, DrawingDifficulty.hard),
+                                          context,
+                                          DrawingDifficulty.hard,
+                                        ),
                                       ),
                                     ],
                                   ),

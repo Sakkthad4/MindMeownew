@@ -1,8 +1,7 @@
 import 'package:flutter/foundation.dart'; // ✅ ValueListenable
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart'; // ✅ box.listenable()
 
-import '../data/models/cat_bond.dart';
+import '../models/cat_bond.dart';
 
 class CatBondProgress {
   final int level; // เริ่ม 1
@@ -30,10 +29,7 @@ class CatBondStore {
     final box = Hive.box<CatBond>(boxName);
 
     if (!box.containsKey(keyMain)) {
-      await box.put(
-        keyMain,
-        CatBond(totalXp: 0, updatedAt: DateTime.now()),
-      );
+      await box.put(keyMain, CatBond(totalXp: 0, updatedAt: DateTime.now()));
     }
   }
 

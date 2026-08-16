@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test22/appBar.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_language.dart';
 
 class GameMenuPage extends StatelessWidget {
   const GameMenuPage({super.key});
@@ -22,28 +23,26 @@ class GameMenuPage extends StatelessWidget {
           thickness: 14,
           radius: const Radius.circular(10),
           child: ListView(
-            padding: const EdgeInsets.only(
-              right: 40,
-            ),
+            padding: const EdgeInsets.only(right: 40),
             children: [
               GameBox(
-                "Supermarket",
+                AppText.get('supermarket'),
                 'assets/images/MindMeowgamesSupermarket.png',
                 '/supermarket',
               ),
               GameBox(
-                "Dice Dash",
+                AppText.get('diceDash'),
                 'assets/images/MindMeowgamesDice.png',
                 '/dicedash',
               ),
               GameBox(
-                "Cat Paw",
-                'assets/images/MindMeowgamesPuzzle.png',
+                AppText.get('catPaw'),
+                'assets/images/MindMeowgamesPaws.png',
                 '/catpaw',
               ),
               GameBox(
-                "Draw",
-                'assets/images/MindMeowgamesDice.png',
+                AppText.get('draw'),
+                'assets/images/MindMeowgamesDraw.png',
                 '/drawvis',
               ),
             ],
@@ -70,7 +69,7 @@ class GameBox extends StatelessWidget {
       },
 
       child: Align(
-        alignment: Alignment.centerLeft, 
+        alignment: Alignment.centerLeft,
         child: SizedBox(
           width: 1200,
           height: 200,

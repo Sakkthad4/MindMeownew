@@ -48,6 +48,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'appBar.dart';
 import 'Myfuncbox.dart';
 import 'package:intl/intl.dart';
+import 'app_language.dart';
 
 String currentTime = DateFormat('HH:mm').format(DateTime.now());
 
@@ -79,7 +80,10 @@ class HomePage extends StatelessWidget {
                     fixedSize: Size(720, 275),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(35),
-                      side: BorderSide(color: Colors.purple.shade200, width: 12),
+                      side: BorderSide(
+                        color: Colors.purple.shade200,
+                        width: 12,
+                      ),
                     ),
                     elevation: 0, // ไม่มีเงา
                   ),
@@ -92,8 +96,8 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
                 MyFuncBox(
-                  "Excersices",
-                  '/excersices',
+                  AppText.get('exercises'),
+                  '/stretch',
                   'assets/images/MindMeowfunc_icon1.png',
                   const Color.fromARGB(255, 92, 225, 230),
                 ),
@@ -110,20 +114,20 @@ class HomePage extends StatelessWidget {
                   MainAxisAlignment.spaceBetween, // กระจายให้ห่างกันเท่าๆ กัน
               children: [
                 MyFuncBox(
-                  "Games",
+                  AppText.get('games'),
                   '/games',
                   'assets/images/MindMeowfunc_icon2.png',
                   const Color.fromARGB(255, 126, 158, 255),
                 ),
                 MyFuncBox(
-                  "MindTalk",
+                  AppText.get('mindTalk'),
                   '/geminiloop',
                   'assets/images/MindMeowfunc_icon3.png',
                   const Color.fromARGB(255, 253, 155, 36),
                 ),
                 MyFuncBox(
-                  "Health Care",
-                  '/chart',
+                  AppText.get('healthCare'),
+                  '/healthcare',
                   'assets/images/MindMeowfunc_icon4.png',
                   const Color.fromARGB(255, 230, 87, 87),
                 ),

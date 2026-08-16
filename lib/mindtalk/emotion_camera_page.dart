@@ -1,5 +1,7 @@
 // lib/mindtalk/emotion_camera_page.dart
 import 'dart:async';
+import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -11,6 +13,16 @@ import 'camera_input_converter.dart';
 /// =======================
 enum DetectedEmotion { neutral, happy, sad }
 
+class CameraEmotionObservation {
+  const CameraEmotionObservation({
+    required this.emotion,
+    required this.confidence,
+  });
+
+  final DetectedEmotion emotion;
+  final double confidence;
+}
+
 extension DetectedEmotionX on DetectedEmotion {
   String get labelTH {
     switch (this) {
@@ -19,10 +31,10 @@ extension DetectedEmotionX on DetectedEmotion {
       case DetectedEmotion.sad:
         return "เศร้า";
       case DetectedEmotion.neutral:
-      default:
         return "ปกติ";
     }
   }
+
   // ✅ ไม่มี mqttCmd แล้ว (กันสับสน!)
 }
 
@@ -30,7 +42,7 @@ extension DetectedEmotionX on DetectedEmotion {
 /// Camera + Emotion Page
 /// =======================
 class EmotionCameraPage extends StatefulWidget {
-  final ValueChanged<DetectedEmotion>? onEmotionDetected;
+  final ValueChanged<CameraEmotionObservation>? onEmotionDetected;
 
   const EmotionCameraPage({super.key, this.onEmotionDetected});
 
@@ -42,7 +54,7 @@ class _EmotionCameraPageState extends State<EmotionCameraPage> {
   CameraController? _controller;
   late FaceDetector _faceDetector;
 
-  DetectedEmotion _lastEmotion = DetectedEmotion.neutral;
+  DetectedEmotion? _lastEmotion;
   DateTime _lastDetect = DateTime.now();
   bool _busy = false;
 
@@ -69,7 +81,9 @@ class _EmotionCameraPageState extends State<EmotionCameraPage> {
       front,
       ResolutionPreset.medium,
       enableAudio: false,
-      imageFormatGroup: ImageFormatGroup.bgra8888,
+      imageFormatGroup: Platform.isIOS
+          ? ImageFormatGroup.bgra8888
+          : ImageFormatGroup.nv21,
     );
 
     await _controller!.initialize();
@@ -105,18 +119,28 @@ class _EmotionCameraPageState extends State<EmotionCameraPage> {
       final face = faces.first;
       final smile = face.smilingProbability ?? 0.0;
 
-      DetectedEmotion emotion;
+      // Keep the original three-state behavior used by MindTalk. The "sad"
+      // result is a facial-expression estimate based on a very low smile
+      // probability, not a clinical assessment of the user's emotion.
+      final DetectedEmotion emotion;
+      final double confidence;
       if (smile > 0.75) {
         emotion = DetectedEmotion.happy;
-      } else if (smile < 0.2) {
+        confidence = smile;
+      } else if (smile < 0.20) {
         emotion = DetectedEmotion.sad;
+        confidence = (1 - smile).clamp(0.55, 0.90);
       } else {
         emotion = DetectedEmotion.neutral;
+        final distanceFromBoundary = math.min(smile - 0.20, 0.75 - smile);
+        confidence = (0.50 + distanceFromBoundary).clamp(0.50, 0.80);
       }
 
       if (emotion != _lastEmotion) {
         _lastEmotion = emotion;
-        widget.onEmotionDetected?.call(emotion); // ✅ ส่งขึ้นไปให้ UI โชว์
+        widget.onEmotionDetected?.call(
+          CameraEmotionObservation(emotion: emotion, confidence: confidence),
+        );
       }
     } finally {
       _busy = false;

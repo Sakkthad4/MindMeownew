@@ -16,10 +16,7 @@ class CatBondAdapter extends TypeAdapter<CatBond> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return CatBond(
-      totalXp: fields[0] as int,
-      updatedAt: fields[1] as DateTime,
-    );
+    return CatBond(totalXp: fields[0] as int, updatedAt: fields[1] as DateTime);
   }
 
   @override

@@ -3,10 +3,13 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'app_language.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
-import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 import 'dart:math' as math;
+
+import 'exercise_pose_geometry.dart';
+import 'healthcare/data/exercise_session_store.dart';
 
 class MindExercisesPage extends StatefulWidget {
   const MindExercisesPage({super.key});
@@ -24,16 +27,16 @@ class _NKp {
   const _NKp(this.x, this.y, this.likelihood);
 }
 
-class StretchPose {
+class _StretchPose {
   final String title;
   final String instruction;
-  final IconData icon;
+  final String imagePath;
   final Color color;
   final bool Function(Map<PoseLandmarkType, _NKp>) check;
-  const StretchPose({
+  const _StretchPose({
     required this.title,
     required this.instruction,
-    required this.icon,
+    required this.imagePath,
     required this.color,
     required this.check,
   });
@@ -42,6 +45,10 @@ class StretchPose {
 // ====================== PAGE ======================
 
 class _MindExercisesPageState extends State<MindExercisesPage> {
+  final ExerciseSessionStore _sessionStore = ExerciseSessionStore();
+  DateTime _sessionStartedAt = DateTime.now();
+  bool _sessionRecorded = false;
+
   CameraController? _cameraController;
   PoseDetector? _poseDetector;
 
@@ -50,21 +57,29 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
   bool _isCompleted = false;
   int _countdown = 0;
   int _frameCount = 0;
+  DateTime? _holdStartedAt;
+  InputImageRotation? _lastInputRotation;
+  String _poseDebugStatus = '';
 
   int _score = 0;
   int _currentPoseIndex = 0;
   int _stableFrames = 0;
+  int _missedFrames = 0;
   static const int _requiredStableFrames = 2;
+  static const int _allowedMissedFramesWhileHolding = 3;
+  static const int _holdSeconds = 5;
 
   Map<PoseLandmarkType, _NKp> _lastKeypoints = {};
   final bool _showDebugOverlay = true;
   String? _cameraError;
 
-  late final List<StretchPose> _poses;
+  late final List<_StretchPose> _poses;
 
-  StretchPose get _currentPose => _poses[_currentPoseIndex];
+  _StretchPose get _currentPose => _poses[_currentPoseIndex];
   int get _totalPoses => _poses.length;
   double get _progressPercent => _currentPoseIndex / _totalPoses;
+  bool get _isShoulderStretch =>
+      _currentPoseIndex == 4 || _currentPoseIndex == 5;
 
   bool get _cameraReady =>
       _cameraController != null &&
@@ -102,6 +117,9 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
 
   @override
   void dispose() {
+    if (!_sessionRecorded && _currentPoseIndex > 0) {
+      _recordSession(completed: false);
+    }
     try {
       _cameraController?.stopImageStream();
     } catch (_) {}
@@ -111,48 +129,80 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
   }
 
   // ====================== ROUTINE ======================
-  List<StretchPose> _buildRoutine() => [
-    StretchPose(
-      title: 'ARMS UP',
-      instruction: 'RAISE BOTH ARMS STRAIGHT ABOVE YOUR HEAD',
-      icon: Icons.wb_sunny_rounded,
+  List<_StretchPose> _buildRoutine() => [
+    _StretchPose(
+      title: AppText.name('OVERHEAD REACH'),
+      instruction: AppText.name(
+        'STAND TALL AND REACH BOTH ARMS GENTLY ABOVE YOUR HEAD',
+      ),
+      imagePath: 'assets/images/exercise_poses/overhead_reach.png',
       color: const Color(0xFFFFB347),
       check: _checkArmsUp,
     ),
-    StretchPose(
-      title: 'T-POSE',
-      instruction: 'OPEN BOTH ARMS SIDEWAYS LIKE A LETTER T',
-      icon: Icons.airplanemode_active,
+    _StretchPose(
+      title: AppText.name('SIDE BEND RIGHT'),
+      instruction: AppText.name(
+        'KEEP YOUR ARMS UP AND BEND YOUR UPPER BODY GENTLY TO THE RIGHT',
+      ),
+      imagePath: 'assets/images/exercise_poses/side_bend_right.png',
+      color: const Color(0xFFFFD1DC),
+      check: (points) =>
+          _checkArmsRaisedForSideBend(points) && _checkLeanRight(points),
+    ),
+    _StretchPose(
+      title: AppText.name('SIDE BEND LEFT'),
+      instruction: AppText.name(
+        'KEEP YOUR ARMS UP AND BEND YOUR UPPER BODY GENTLY TO THE LEFT',
+      ),
+      imagePath: 'assets/images/exercise_poses/side_bend_left.png',
+      color: const Color(0xFFFFD1DC),
+      check: (points) =>
+          _checkArmsRaisedForSideBend(points) && _checkLeanLeft(points),
+    ),
+    _StretchPose(
+      title: AppText.name('CHEST OPENER'),
+      instruction: AppText.name(
+        'OPEN BOTH ARMS SIDEWAYS AND KEEP YOUR SHOULDERS RELAXED',
+      ),
+      imagePath: 'assets/images/exercise_poses/chest_opener.png',
       color: const Color(0xFF8ED1FF),
       check: _checkTPose,
     ),
-    StretchPose(
-      title: 'NECK STRETCH RIGHT',
-      instruction: 'TILT YOUR HEAD GENTLY TO THE RIGHT',
-      icon: Icons.arrow_forward_rounded,
-      color: const Color(0xFFB5EAD7),
-      check: _checkHeadTiltRight,
+    _StretchPose(
+      title: AppText.name('RIGHT SHOULDER STRETCH'),
+      instruction: AppText.name(
+        'BRING YOUR RIGHT ARM ACROSS YOUR CHEST AND KEEP IT STRAIGHT',
+      ),
+      imagePath: 'assets/images/exercise_poses/right_shoulder_stretch.png',
+      color: const Color(0xFFC9B8FF),
+      check: (points) => _checkCrossBodyShoulder(points, rightArm: true),
     ),
-    StretchPose(
-      title: 'NECK STRETCH LEFT',
-      instruction: 'TILT YOUR HEAD GENTLY TO THE LEFT',
-      icon: Icons.arrow_back_rounded,
-      color: const Color(0xFFB5EAD7),
-      check: _checkHeadTiltLeft,
+    _StretchPose(
+      title: AppText.name('LEFT SHOULDER STRETCH'),
+      instruction: AppText.name(
+        'BRING YOUR LEFT ARM ACROSS YOUR CHEST AND KEEP IT STRAIGHT',
+      ),
+      imagePath: 'assets/images/exercise_poses/left_shoulder_stretch.png',
+      color: const Color(0xFFC9B8FF),
+      check: (points) => _checkCrossBodyShoulder(points, rightArm: false),
     ),
-    StretchPose(
-      title: 'SIDE BEND RIGHT',
-      instruction: 'BEND YOUR UPPER BODY TO THE RIGHT',
-      icon: Icons.accessibility_new_rounded,
-      color: const Color(0xFFFFD1DC),
-      check: _checkLeanRight,
+    _StretchPose(
+      title: AppText.name('RIGHT QUAD STRETCH'),
+      instruction: AppText.name(
+        'BEND YOUR RIGHT KNEE AND LIFT YOUR FOOT GENTLY BEHIND YOU',
+      ),
+      imagePath: 'assets/images/exercise_poses/right_quad_stretch.png',
+      color: const Color(0xFF8EDDC2),
+      check: (points) => _checkQuadStretch(points, rightLeg: true),
     ),
-    StretchPose(
-      title: 'SIDE BEND LEFT',
-      instruction: 'BEND YOUR UPPER BODY TO THE LEFT',
-      icon: Icons.accessibility_new_rounded,
-      color: const Color(0xFFFFD1DC),
-      check: _checkLeanLeft,
+    _StretchPose(
+      title: AppText.name('LEFT QUAD STRETCH'),
+      instruction: AppText.name(
+        'BEND YOUR LEFT KNEE AND LIFT YOUR FOOT GENTLY BEHIND YOU',
+      ),
+      imagePath: 'assets/images/exercise_poses/left_quad_stretch.png',
+      color: const Color(0xFF8EDDC2),
+      check: (points) => _checkQuadStretch(points, rightLeg: false),
     ),
   ];
 
@@ -182,7 +232,7 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
 
   // ====================== FRAME LOOP ======================
   Future<void> _processCameraImage(CameraImage image) async {
-    if (_isDetecting || _isCounting || _isCompleted) return;
+    if (_isDetecting || _isCompleted) return;
     if (_poseDetector == null) return;
 
     _frameCount++;
@@ -211,14 +261,40 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
         setState(() => _lastKeypoints = keypoints);
       }
 
-      if (_currentPose.check(keypoints)) {
+      final poseIsCorrect = _currentPose.check(keypoints);
+      if (poseIsCorrect) {
+        _missedFrames = 0;
         _stableFrames++;
-        if (_stableFrames >= _requiredStableFrames) {
-          _stableFrames = 0;
-          _startCountdown();
+        if (!_isCounting && _stableFrames >= _requiredStableFrames) {
+          _holdStartedAt = DateTime.now();
+          if (mounted) {
+            setState(() {
+              _isCounting = true;
+              _countdown = _holdSeconds;
+            });
+          }
+        } else if (_isCounting && _holdStartedAt != null) {
+          final elapsed = DateTime.now().difference(_holdStartedAt!).inSeconds;
+          final remaining = (_holdSeconds - elapsed).clamp(0, _holdSeconds);
+          if (remaining == 0) {
+            _completeCurrentPose();
+          } else if (remaining != _countdown && mounted) {
+            setState(() => _countdown = remaining);
+          }
         }
       } else {
         _stableFrames = 0;
+        if (_isCounting) _missedFrames++;
+        if (_isCounting &&
+            _missedFrames > _allowedMissedFramesWhileHolding &&
+            mounted) {
+          setState(() {
+            _isCounting = false;
+            _countdown = 0;
+            _holdStartedAt = null;
+            _missedFrames = 0;
+          });
+        }
       }
     } catch (e, st) {
       debugPrint('❌ Detect: $e\n$st');
@@ -246,6 +322,7 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
       rotation = InputImageRotationValue.fromRawValue(rotComp);
     }
     if (rotation == null) return null;
+    _lastInputRotation = rotation;
 
     final format = InputImageFormatValue.fromRawValue(image.format.raw);
     if (format == null) return null;
@@ -267,41 +344,74 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
   }
 
   Map<PoseLandmarkType, _NKp> _normalize(Pose pose, CameraImage image) {
-    final w = image.width.toDouble();
-    final h = image.height.toDouble();
+    final imageWidth = image.width.toDouble();
+    final imageHeight = image.height.toDouble();
+    final rotation = _lastInputRotation ?? InputImageRotation.rotation0deg;
+    final rotatedOnAndroid =
+        Platform.isAndroid &&
+        (rotation == InputImageRotation.rotation90deg ||
+            rotation == InputImageRotation.rotation270deg);
+    final xDenominator = rotatedOnAndroid ? imageHeight : imageWidth;
+    final yDenominator = rotatedOnAndroid ? imageWidth : imageHeight;
+    final camera = _cameraController!.description;
+
     final result = <PoseLandmarkType, _NKp>{};
     pose.landmarks.forEach((type, lm) {
-      if (lm.likelihood > 0.3) {
-        result[type] = _NKp(lm.x / w, lm.y / h, lm.likelihood);
-      }
+      // Cross-body stretches naturally occlude a wrist or elbow. Retain these
+      // lower-confidence points and use multi-frame stability to reject noise.
+      if (lm.likelihood < 0.15) return;
+
+      var x = lm.x / xDenominator;
+      final y = lm.y / yDenominator;
+      final shouldFlipX =
+          rotation == InputImageRotation.rotation270deg ||
+          ((rotation == InputImageRotation.rotation0deg ||
+                  rotation == InputImageRotation.rotation180deg) &&
+              camera.lensDirection == CameraLensDirection.front);
+      if (shouldFlipX) x = 1 - x;
+
+      result[type] = _NKp(x.clamp(0.0, 1.0), y.clamp(0.0, 1.0), lm.likelihood);
     });
     return result;
   }
 
   // ====================== POSE CHECKS ======================
   bool _checkArmsUp(Map<PoseLandmarkType, _NKp> p) {
+    return _checkRaisedArms(p, minimumElbowAngle: 150, liftMargin: 0.05);
+  }
+
+  bool _checkArmsRaisedForSideBend(Map<PoseLandmarkType, _NKp> p) {
+    return _checkRaisedArms(p, minimumElbowAngle: 125, liftMargin: -0.02);
+  }
+
+  bool _checkRaisedArms(
+    Map<PoseLandmarkType, _NKp> p, {
+    required double minimumElbowAngle,
+    required double liftMargin,
+  }) {
     final lw = p[PoseLandmarkType.leftWrist];
     final rw = p[PoseLandmarkType.rightWrist];
     final ls = p[PoseLandmarkType.leftShoulder];
     final rs = p[PoseLandmarkType.rightShoulder];
     if (lw == null || rw == null || ls == null || rs == null) return false;
 
-    // วัด angle และความสูงเพื่อความสมจริง
-    double leftElbowAngle = _calculateAngle(
+    final leftElbowAngle = _calculateAngle(
       ls,
       p[PoseLandmarkType.leftElbow],
       lw,
     );
-    double rightElbowAngle = _calculateAngle(
+    final rightElbowAngle = _calculateAngle(
       rs,
       p[PoseLandmarkType.rightElbow],
       rw,
     );
 
-    final wristsAboveHead = lw.y < ls.y - 0.05 && rw.y < rs.y - 0.05;
-    final elbowsStraight = leftElbowAngle > 150 && rightElbowAngle > 150;
+    final wristsRaised = lw.y < ls.y - liftMargin && rw.y < rs.y - liftMargin;
+    final elbowsStraight =
+        leftElbowAngle > minimumElbowAngle &&
+        rightElbowAngle > minimumElbowAngle;
 
-    return wristsAboveHead && elbowsStraight;
+    return wristsRaised && elbowsStraight;
   }
 
   double _calculateAngle(_NKp? a, _NKp? b, _NKp? c) {
@@ -330,67 +440,172 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
     return lFlat && rFlat && wristW > shoulderW * 1.4;
   }
 
-  bool _checkHeadTiltRight(Map<PoseLandmarkType, _NKp> p) {
-    final n = p[PoseLandmarkType.nose];
-    final ls = p[PoseLandmarkType.leftShoulder];
-    final rs = p[PoseLandmarkType.rightShoulder];
-    if (n == null || ls == null || rs == null) return false;
-    final midX = (ls.x + rs.x) / 2;
-    return n.x < midX - 0.03;
-  }
-
-  bool _checkHeadTiltLeft(Map<PoseLandmarkType, _NKp> p) {
-    final n = p[PoseLandmarkType.nose];
-    final ls = p[PoseLandmarkType.leftShoulder];
-    final rs = p[PoseLandmarkType.rightShoulder];
-    if (n == null || ls == null || rs == null) return false;
-    final midX = (ls.x + rs.x) / 2;
-    return n.x > midX + 0.03;
-  }
-
   bool _checkLeanRight(Map<PoseLandmarkType, _NKp> p) {
-    final ls = p[PoseLandmarkType.leftShoulder];
-    final rs = p[PoseLandmarkType.rightShoulder];
-    if (ls == null || rs == null) return false;
-    return rs.y > ls.y + 0.04;
+    final lean = _bodyRelativeLean(p);
+    return lean != null && lean > 0.08;
   }
 
   bool _checkLeanLeft(Map<PoseLandmarkType, _NKp> p) {
+    final lean = _bodyRelativeLean(p);
+    return lean != null && lean < -0.08;
+  }
+
+  /// Positive values mean the shoulders move toward the user's anatomical
+  /// right side. This stays correct when a front-camera preview is mirrored.
+  double? _bodyRelativeLean(Map<PoseLandmarkType, _NKp> p) {
     final ls = p[PoseLandmarkType.leftShoulder];
     final rs = p[PoseLandmarkType.rightShoulder];
-    if (ls == null || rs == null) return false;
-    return ls.y > rs.y + 0.04;
+    final lh = p[PoseLandmarkType.leftHip];
+    final rh = p[PoseLandmarkType.rightHip];
+    if (ls == null || rs == null || lh == null || rh == null) return null;
+
+    final shoulderWidth = (rs.x - ls.x).abs();
+    if (shoulderWidth < 0.04) return null;
+    final bodyRightDirection = (rs.x - ls.x).sign;
+    final shoulderMidX = (ls.x + rs.x) / 2;
+    final hipMidX = (lh.x + rh.x) / 2;
+    final hipsAreLevel = (lh.y - rh.y).abs() < 0.10;
+    if (!hipsAreLevel) return null;
+
+    return ((shoulderMidX - hipMidX) * bodyRightDirection) / shoulderWidth;
+  }
+
+  bool _checkCrossBodyShoulder(
+    Map<PoseLandmarkType, _NKp> p, {
+    required bool rightArm,
+  }) {
+    final ls = p[PoseLandmarkType.leftShoulder];
+    final rs = p[PoseLandmarkType.rightShoulder];
+    final shoulder =
+        p[rightArm
+            ? PoseLandmarkType.rightShoulder
+            : PoseLandmarkType.leftShoulder];
+    final elbow =
+        p[rightArm ? PoseLandmarkType.rightElbow : PoseLandmarkType.leftElbow];
+    final wrist =
+        p[rightArm ? PoseLandmarkType.rightWrist : PoseLandmarkType.leftWrist];
+    if (ls == null ||
+        rs == null ||
+        shoulder == null ||
+        (elbow == null && wrist == null)) {
+      _poseDebugStatus =
+          '${rightArm ? 'R' : 'L'} shoulder: missing arm landmarks';
+      return false;
+    }
+
+    final shoulderWidth = (rs.x - ls.x).abs();
+    if (shoulderWidth < 0.04) return false;
+
+    double bodyX(_NKp point) => ExercisePoseGeometry.bodyRelativeX(
+      pointX: point.x,
+      leftShoulderX: ls.x,
+      rightShoulderX: rs.x,
+    );
+
+    final isCorrect = ExercisePoseGeometry.isCrossBodyShoulder(
+      rightArm: rightArm,
+      leftShoulder: Offset(ls.x, ls.y),
+      rightShoulder: Offset(rs.x, rs.y),
+      activeShoulder: Offset(shoulder.x, shoulder.y),
+      activeElbow: elbow == null ? null : Offset(elbow.x, elbow.y),
+      activeWrist: wrist == null ? null : Offset(wrist.x, wrist.y),
+    );
+
+    final wristValue = wrist == null ? '--' : bodyX(wrist).toStringAsFixed(2);
+    final elbowValue = elbow == null ? '--' : bodyX(elbow).toStringAsFixed(2);
+    _poseDebugStatus =
+        '${rightArm ? 'R' : 'L'} arm  E:$elbowValue W:$wristValue  '
+        '${isCorrect ? 'POSE ✓' : 'move arm across chest'}';
+
+    return isCorrect;
+  }
+
+  bool _checkQuadStretch(
+    Map<PoseLandmarkType, _NKp> p, {
+    required bool rightLeg,
+  }) {
+    final hip =
+        p[rightLeg ? PoseLandmarkType.rightHip : PoseLandmarkType.leftHip];
+    final knee =
+        p[rightLeg ? PoseLandmarkType.rightKnee : PoseLandmarkType.leftKnee];
+    final ankle =
+        p[rightLeg ? PoseLandmarkType.rightAnkle : PoseLandmarkType.leftAnkle];
+    final oppositeAnkle =
+        p[rightLeg ? PoseLandmarkType.leftAnkle : PoseLandmarkType.rightAnkle];
+    final ls = p[PoseLandmarkType.leftShoulder];
+    final rs = p[PoseLandmarkType.rightShoulder];
+    if (hip == null ||
+        knee == null ||
+        ankle == null ||
+        oppositeAnkle == null ||
+        ls == null ||
+        rs == null) {
+      return false;
+    }
+
+    final shoulderWidth = (rs.x - ls.x).abs();
+    final kneeAngle = _calculateAngle(hip, knee, ankle);
+    final thighMostlyDown = knee.y > hip.y + 0.10;
+    final footLifted = ankle.y < knee.y - 0.06;
+    final kneeBent = kneeAngle > 25 && kneeAngle < 115;
+    final supportFootLower = oppositeAnkle.y > ankle.y + 0.08;
+    final kneeNearHipLine = (knee.x - hip.x).abs() < shoulderWidth * 0.85;
+
+    return thighMostlyDown &&
+        footLifted &&
+        kneeBent &&
+        supportFootLower &&
+        kneeNearHipLine;
   }
 
   // ====================== COUNTDOWN ======================
-  Future<void> _startCountdown() async {
-    if (_isCounting) return;
+  void _completeCurrentPose() {
+    if (!mounted || !_isCounting) return;
+    var routineCompleted = false;
     setState(() {
-      _isCounting = true;
-      _countdown = 5;
-      _score += 10;
-    });
-    while (_countdown > 0) {
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
-      setState(() => _countdown--);
-    }
-    setState(() {
-      _score += 50;
+      _score += 100;
       _currentPoseIndex++;
       _isCounting = false;
+      _countdown = 0;
+      _holdStartedAt = null;
+      _stableFrames = 0;
+      _missedFrames = 0;
+      if (_currentPoseIndex >= _totalPoses) {
+        _isCompleted = true;
+        routineCompleted = true;
+      }
     });
-    if (_currentPoseIndex >= _totalPoses) {
-      setState(() => _isCompleted = true);
+    if (routineCompleted) {
+      _recordSession(completed: true);
     }
   }
 
   void _restart() => setState(() {
+    _sessionStartedAt = DateTime.now();
+    _sessionRecorded = false;
     _currentPoseIndex = 0;
     _score = 0;
     _isCompleted = false;
+    _isCounting = false;
+    _countdown = 0;
+    _holdStartedAt = null;
     _stableFrames = 0;
+    _missedFrames = 0;
   });
+
+  void _recordSession({required bool completed}) {
+    if (_sessionRecorded) return;
+    _sessionRecorded = true;
+    unawaited(
+      _sessionStore.record(
+        completedPoses: _currentPoseIndex,
+        totalPoses: _totalPoses,
+        score: _score,
+        duration: DateTime.now().difference(_sessionStartedAt),
+        completed: completed,
+      ),
+    );
+  }
 
   void _retryInit() {
     setState(() => _cameraError = null);
@@ -402,78 +617,157 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8EC),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 12),
-              Expanded(
-                child: _isCompleted ? _buildCompletedView() : _buildGameView(),
-              ),
-            ],
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFFFBF4), Color(0xFFFFEED7)],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            child: Column(
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: _isCompleted
+                      ? _buildCompletedView()
+                      : _buildGameView(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() => Row(
-    children: [
-      const Icon(Icons.wb_sunny_rounded, color: Colors.orange, size: 32),
-      const SizedBox(width: 8),
-      const Text(
-        'Morning Stretch',
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-      const Spacer(),
-      Container(
-        width: 180,
-        height: 12,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(8),
+  Widget _buildHeader() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.92),
+      borderRadius: BorderRadius.circular(22),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x18000000),
+          blurRadius: 20,
+          offset: Offset(0, 8),
         ),
-        child: FractionallySizedBox(
-          widthFactor: _progressPercent.clamp(0.0, 1.0),
-          alignment: Alignment.centerLeft,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(8),
-            ),
+      ],
+    ),
+    child: Row(
+      children: [
+        IconButton.filledTonal(
+          onPressed: () => Navigator.maybePop(context),
+          icon: const Icon(Icons.arrow_back_rounded),
+          style: IconButton.styleFrom(
+            backgroundColor: const Color(0xFFFFE8C2),
+            foregroundColor: const Color(0xFFE87923),
           ),
         ),
-      ),
-      const SizedBox(width: 12),
-      Text(
-        '$_currentPoseIndex / $_totalPoses',
-        style: const TextStyle(fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(width: 24),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.orange,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.star, color: Colors.white, size: 20),
-            const SizedBox(width: 6),
-            Text(
-              '$_score',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+        const SizedBox(width: 12),
+        Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFB44A), Color(0xFFFF7A3D)],
             ),
-          ],
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: const Icon(
+            Icons.self_improvement_rounded,
+            color: Colors.white,
+            size: 29,
+          ),
         ),
-      ),
-    ],
+        const SizedBox(width: 12),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppText.get('morningStretch'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF4E3829),
+                ),
+              ),
+              Text(
+                AppText.get('exerciseSafety'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF9A7B67),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Spacer(),
+        SizedBox(
+          width: 190,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${(_currentPoseIndex.clamp(0, _totalPoses))} / $_totalPoses',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF6D5544),
+                ),
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  minHeight: 10,
+                  value: _progressPercent.clamp(0.0, 1.0),
+                  backgroundColor: const Color(0xFFFFE6C6),
+                  valueColor: const AlwaysStoppedAnimation(Color(0xFFFF8A3D)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 18),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF1D9),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFFFD08A)),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.star_rounded,
+                color: Color(0xFFFF9A2E),
+                size: 24,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$_score',
+                style: const TextStyle(
+                  color: Color(0xFFD86F1D),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
   );
 
   Widget _buildCameraStack() {
@@ -487,8 +781,8 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
           children: [
             const Icon(Icons.error_outline, color: Colors.white, size: 48),
             const SizedBox(height: 12),
-            const Text(
-              'เปิดกล้องไม่สำเร็จ',
+            Text(
+              AppText.get('cameraFailed'),
               style: TextStyle(color: Colors.white, fontSize: 18),
             ),
             const SizedBox(height: 8),
@@ -501,7 +795,7 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
             ElevatedButton.icon(
               onPressed: _retryInit,
               icon: const Icon(Icons.refresh),
-              label: const Text('ลองอีกครั้ง'),
+              label: Text(AppText.get('retry')),
             ),
           ],
         ),
@@ -512,101 +806,295 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
       return Container(
         color: Colors.black,
         alignment: Alignment.center,
-        child: const Column(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             CircularProgressIndicator(color: Colors.orange),
             SizedBox(height: 12),
-            Text('กำลังเปิดกล้อง...', style: TextStyle(color: Colors.white)),
+            Text(
+              AppText.get('openingCamera'),
+              style: const TextStyle(color: Colors.white),
+            ),
           ],
         ),
       );
     }
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        CameraPreview(_cameraController!),
-        if (_showDebugOverlay)
-          CustomPaint(painter: _PosePainter(_lastKeypoints)),
-        Positioned(
-          top: 16,
-          left: 16,
-          child: _CountdownBadge(value: _countdown),
-        ),
-        if (_isCounting)
-          Positioned(
-            bottom: 16,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.85),
-                borderRadius: BorderRadius.circular(16),
+    return ColoredBox(
+      color: const Color(0xFF151515),
+      child: Center(
+        child: AspectRatio(
+          // Keeping the native preview aspect ratio prevents faces and bodies
+          // from being stretched to match the surrounding card.
+          aspectRatio: _cameraController!.value.aspectRatio,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              CameraPreview(_cameraController!),
+              if (_showDebugOverlay)
+                CustomPaint(painter: _PosePainter(_lastKeypoints)),
+              Positioned(
+                top: 16,
+                left: 16,
+                child: _CountdownBadge(value: _countdown),
               ),
-              child: const Center(
-                child: Text(
-                  'ค้างไว้! ทำได้ดีมาก 👍',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.52),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.accessibility_new_rounded,
+                        size: 16,
+                        color: Colors.limeAccent,
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        'LANDMARKS',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
+              if (_isCounting)
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF36A66A).withValues(alpha: 0.92),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Center(
+                      child: Text(
+                        AppText.get('holdPose'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              if (_isShoulderStretch &&
+                  !_isCounting &&
+                  _poseDebugStatus.isNotEmpty)
+                Positioned(
+                  bottom: 14,
+                  left: 14,
+                  right: 14,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.68),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      _poseDebugStatus,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
-      ],
+        ),
+      ),
     );
   }
 
   Widget _buildGameView() {
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.orange, width: 6),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: _buildCameraStack(),
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final camera = Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF151515),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: Colors.white, width: 5),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x26000000),
+                blurRadius: 24,
+                offset: Offset(0, 12),
+              ),
+            ],
           ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: _buildCameraStack(),
+          ),
+        );
+        final guide = _buildPoseGuide();
+        if (constraints.maxWidth < 760) {
+          return Column(
+            children: [
+              Expanded(flex: 3, child: camera),
+              const SizedBox(height: 14),
+              Expanded(flex: 2, child: guide),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(flex: 3, child: camera),
+            const SizedBox(width: 18),
+            Expanded(flex: 2, child: guide),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildPoseGuide() {
+    final holdProgress = _isCounting
+        ? ((_holdSeconds - _countdown) / _holdSeconds).clamp(0.0, 1.0)
+        : 0.0;
+    return Container(
+      padding: const EdgeInsets.all(26),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _currentPose.color,
+            Color.lerp(_currentPose.color, Colors.black, 0.12)!,
+          ],
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          flex: 2,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: _currentPose.color,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  _currentPose.title,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: _currentPose.color.withValues(alpha: 0.32),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.24),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${AppText.get('exerciseStep')} ${_currentPoseIndex + 1} '
+                '${AppText.get('exerciseOf')} $_totalPoses',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.8,
                 ),
-                const SizedBox(height: 16),
-                Icon(_currentPose.icon, size: 140, color: Colors.white),
-                const SizedBox(height: 24),
-                _InstructionButton(text: _currentPose.instruction),
-              ],
+              ),
             ),
           ),
-        ),
-      ],
+          const Spacer(),
+          Expanded(
+            flex: 5,
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(28),
+              ),
+              padding: const EdgeInsets.all(8),
+              child: Image.asset(
+                _currentPose.imagePath,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _currentPose.title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 25,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _InstructionButton(text: _currentPose.instruction),
+          const SizedBox(height: 18),
+          Column(
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    _isCounting
+                        ? Icons.check_circle_rounded
+                        : Icons.center_focus_strong_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _isCounting
+                          ? AppText.get('keepHoldingPose')
+                          : AppText.get('fitBodyInCamera'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    _isCounting ? '$_countdown s' : '$_holdSeconds s',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 9),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: holdProgress,
+                  minHeight: 11,
+                  backgroundColor: Colors.white.withValues(alpha: 0.28),
+                  valueColor: const AlwaysStoppedAnimation(Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+        ],
+      ),
     );
   }
 
@@ -626,13 +1114,13 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
             color: Colors.amber,
           ),
           const SizedBox(height: 16),
-          const Text(
-            'เยี่ยมมาก! เสร็จสิ้นแล้ว 🎉',
+          Text(
+            AppText.get('greatCompleted'),
             style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Text(
-            'คะแนนของคุณ: $_score',
+            '${AppText.get('yourScore')}: $_score',
             style: const TextStyle(
               fontSize: 22,
               color: Colors.orange,
@@ -646,7 +1134,7 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
               ElevatedButton.icon(
                 onPressed: _restart,
                 icon: const Icon(Icons.replay),
-                label: const Text('ทำอีกครั้ง'),
+                label: Text(AppText.get('doAgain')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                   foregroundColor: Colors.white,
@@ -660,7 +1148,7 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
               OutlinedButton.icon(
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.home),
-                label: const Text('กลับหน้าหลัก'),
+                label: Text(AppText.get('backHome')),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -702,12 +1190,18 @@ class _PosePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final dot = Paint()
+    final line = Paint()
+      ..color = Colors.limeAccent.withValues(alpha: 0.6)
+      ..strokeWidth = 2;
+    final leftDot = Paint()
+      ..color = Colors.yellowAccent
+      ..style = PaintingStyle.fill;
+    final rightDot = Paint()
+      ..color = Colors.lightBlueAccent
+      ..style = PaintingStyle.fill;
+    final otherDot = Paint()
       ..color = Colors.limeAccent
       ..style = PaintingStyle.fill;
-    final line = Paint()
-      ..color = Colors.limeAccent.withOpacity(0.6)
-      ..strokeWidth = 2;
 
     Offset map(_NKp k) => Offset(k.x * size.width, k.y * size.height);
 
@@ -715,9 +1209,56 @@ class _PosePainter extends CustomPainter {
       final a = kps[e[0]], b = kps[e[1]];
       if (a != null && b != null) canvas.drawLine(map(a), map(b), line);
     }
-    for (final k in kps.values) {
-      canvas.drawCircle(map(k), 5, dot);
+    for (final entry in kps.entries) {
+      final isLeft = entry.key.name.startsWith('left');
+      final isRight = entry.key.name.startsWith('right');
+      canvas.drawCircle(
+        map(entry.value),
+        5,
+        isLeft ? leftDot : (isRight ? rightDot : otherDot),
+      );
     }
+
+    _paintSideLabel(
+      canvas,
+      kps[PoseLandmarkType.leftWrist],
+      size,
+      'L',
+      Colors.yellowAccent,
+    );
+    _paintSideLabel(
+      canvas,
+      kps[PoseLandmarkType.rightWrist],
+      size,
+      'R',
+      Colors.lightBlueAccent,
+    );
+  }
+
+  void _paintSideLabel(
+    Canvas canvas,
+    _NKp? point,
+    Size size,
+    String label,
+    Color color,
+  ) {
+    if (point == null) return;
+    final painter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          color: color,
+          fontSize: 16,
+          fontWeight: FontWeight.w900,
+          shadows: const [Shadow(color: Colors.black, blurRadius: 4)],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    painter.paint(
+      canvas,
+      Offset(point.x * size.width + 7, point.y * size.height - 18),
+    );
   }
 
   @override

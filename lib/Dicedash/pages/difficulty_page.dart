@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../app_language.dart';
 import '../models.dart';
 import '../theme/dicedash_theme.dart';
 import '../widgets/dicedash_bg.dart';
@@ -148,7 +149,7 @@ class DifficultyPage extends StatelessWidget {
                           ],
                         ),
                         child: Text(
-                          'Calculating Game',
+                          AppText.get('calculatingGame'),
                           style: TextStyle(
                             fontSize: titleSize,
                             fontWeight: FontWeight.w900,
@@ -169,19 +170,19 @@ class DifficultyPage extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 diffCard(
-                                  label: 'Easy',
+                                  label: AppText.get('easy'),
                                   imageAsset: 'assets/difficulty/easy.png',
                                   onTap: () => _go(context, Difficulty.easy),
                                 ),
                                 const SizedBox(width: 52),
                                 diffCard(
-                                  label: 'Normal',
+                                  label: AppText.get('normal'),
                                   imageAsset: 'assets/difficulty/normal.png',
                                   onTap: () => _go(context, Difficulty.normal),
                                 ),
                                 const SizedBox(width: 52),
                                 diffCard(
-                                  label: 'Hard',
+                                  label: AppText.get('hard'),
                                   imageAsset: 'assets/difficulty/hard.png',
                                   onTap: () => _go(context, Difficulty.hard),
                                 ),
@@ -195,19 +196,20 @@ class DifficultyPage extends StatelessWidget {
                               child: Column(
                                 children: [
                                   diffCard(
-                                    label: 'Easy',
+                                    label: AppText.get('easy'),
                                     imageAsset: 'assets/difficulty/easy.png',
                                     onTap: () => _go(context, Difficulty.easy),
                                   ),
                                   const SizedBox(height: 22),
                                   diffCard(
-                                    label: 'Normal',
+                                    label: AppText.get('normal'),
                                     imageAsset: 'assets/difficulty/normal.png',
-                                    onTap: () => _go(context, Difficulty.normal),
+                                    onTap: () =>
+                                        _go(context, Difficulty.normal),
                                   ),
                                   const SizedBox(height: 22),
                                   diffCard(
-                                    label: 'Hard',
+                                    label: AppText.get('hard'),
                                     imageAsset: 'assets/difficulty/hard.png',
                                     onTap: () => _go(context, Difficulty.hard),
                                   ),
@@ -222,10 +224,7 @@ class DifficultyPage extends StatelessWidget {
                   // Back Button (ใหญ่ / ผู้สูงวัย)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 64,
-                    ),
+                    child: SizedBox(width: double.infinity, height: 64),
                   ),
                 ],
               );

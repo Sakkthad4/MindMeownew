@@ -1,8 +1,9 @@
 import 'package:hive/hive.dart';
-import '../data/models/game_result.dart';
+import '../models/game_result.dart';
 
 class ChartRepository {
-  ChartRepository({Box<GameResult>? box}) : _box = box ?? Hive.box<GameResult>('results');
+  ChartRepository({Box<GameResult>? box})
+    : _box = box ?? Hive.box<GameResult>('results');
 
   final Box<GameResult> _box;
 
@@ -16,10 +17,11 @@ class ChartRepository {
     required String game,
     required String difficulty,
   }) async {
-    final list = _box.values
-        .where((e) => e.game == game && e.difficulty == difficulty)
-        .toList()
-      ..sort((a, b) => a.playedAt.compareTo(b.playedAt));
+    final list =
+        _box.values
+            .where((e) => e.game == game && e.difficulty == difficulty)
+            .toList()
+          ..sort((a, b) => a.playedAt.compareTo(b.playedAt));
     return list;
   }
 
