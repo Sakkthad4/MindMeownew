@@ -7,6 +7,7 @@ import 'difficulty_page.dart';
 
 // ✅ เพิ่มเพื่อบันทึกผลลง Hive/Chart
 import '../../healthcare/data/chart_store.dart';
+import '../../audio/page_voice.dart';
 
 class ResultPage extends StatelessWidget {
   final Difficulty difficulty;
@@ -62,96 +63,122 @@ class ResultPage extends StatelessWidget {
     final accColor = _accColor(acc);
 
     return Scaffold(
-      body: DiceDashBG(
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, c) {
-              final w = c.maxWidth;
-              final wide = w >= 900;
+      body: PageVoice(
+        assetPath: VoiceAssets.greatJob,
+        child: DiceDashBG(
+          child: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final w = c.maxWidth;
+                final wide = w >= 900;
 
-              final cardRadius = 30.0;
-              final borderW = 8.0;
+                final cardRadius = 30.0;
+                final borderW = 8.0;
 
-              final bigTitle = (w / 20).clamp(24.0, 38.0);
-              final bigNumber = (w / 10).clamp(52.0, 96.0);
+                final bigTitle = (w / 20).clamp(24.0, 38.0);
+                final bigNumber = (w / 10).clamp(52.0, 96.0);
 
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-                child: Column(
-                  children: [
-                    // Top Bar
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                  child: Column(
+                    children: [
+                      // Top Bar
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: kDiceDashOrange,
+                              borderRadius: BorderRadius.circular(22),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: alphaColor(Colors.black, 0.14),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              "${AppText.get('result')} • $diffLabel",
+                              style: TextStyle(
+                                fontSize: (bigTitle * 0.65).clamp(16.0, 22.0),
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
+                          const Spacer(),
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      // Main Card
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: kDiceDashOrange,
-                            borderRadius: BorderRadius.circular(22),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(cardRadius),
+                            border: Border.all(
+                              color: kDiceDashOrange,
+                              width: borderW,
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: alphaColor(Colors.black, 0.14),
-                                blurRadius: 16,
-                                offset: const Offset(0, 10),
+                                blurRadius: 24,
+                                offset: const Offset(0, 14),
                               ),
                             ],
                           ),
-                          child: Text(
-                            "${AppText.get('result')} • $diffLabel",
-                            style: TextStyle(
-                              fontSize: (bigTitle * 0.65).clamp(16.0, 22.0),
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    // Main Card
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(cardRadius),
-                          border: Border.all(
-                            color: kDiceDashOrange,
-                            width: borderW,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: alphaColor(Colors.black, 0.14),
-                              blurRadius: 24,
-                              offset: const Offset(0, 14),
-                            ),
-                          ],
-                        ),
-                        child: wide
-                            ? Row(
-                                children: [
-                                  // LEFT: Accuracy
-                                  Expanded(
-                                    child: _AccuracyPanel(
-                                      acc: acc,
-                                      bigNumber: bigNumber,
-                                      bigTitle: bigTitle,
-                                      rankText: rankText,
-                                      accColor: accColor,
+                          child: wide
+                              ? Row(
+                                  children: [
+                                    // LEFT: Accuracy
+                                    Expanded(
+                                      child: _AccuracyPanel(
+                                        acc: acc,
+                                        bigNumber: bigNumber,
+                                        bigTitle: bigTitle,
+                                        rankText: rankText,
+                                        accColor: accColor,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 18),
+                                    const SizedBox(width: 18),
 
-                                  // RIGHT: Details table + Home button
-                                  SizedBox(
-                                    width: (w * 0.46).clamp(380.0, 620.0),
-                                    child: _DetailsPanel(
+                                    // RIGHT: Details table + Home button
+                                    SizedBox(
+                                      width: (w * 0.46).clamp(380.0, 620.0),
+                                      child: _DetailsPanel(
+                                        difficulty:
+                                            difficulty, // ✅ เพิ่ม (UI ไม่เปลี่ยน)
+                                        results: results,
+                                        totalRounds: totalRounds,
+                                        score: score,
+                                        correctCount: correctCount,
+                                        onHome: () => _goHome(context),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  children: [
+                                    Expanded(
+                                      child: _AccuracyPanel(
+                                        acc: acc,
+                                        bigNumber: bigNumber,
+                                        bigTitle: bigTitle,
+                                        rankText: rankText,
+                                        accColor: accColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _DetailsPanel(
                                       difficulty:
                                           difficulty, // ✅ เพิ่ม (UI ไม่เปลี่ยน)
                                       results: results,
@@ -160,38 +187,15 @@ class ResultPage extends StatelessWidget {
                                       correctCount: correctCount,
                                       onHome: () => _goHome(context),
                                     ),
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                children: [
-                                  Expanded(
-                                    child: _AccuracyPanel(
-                                      acc: acc,
-                                      bigNumber: bigNumber,
-                                      bigTitle: bigTitle,
-                                      rankText: rankText,
-                                      accColor: accColor,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  _DetailsPanel(
-                                    difficulty:
-                                        difficulty, // ✅ เพิ่ม (UI ไม่เปลี่ยน)
-                                    results: results,
-                                    totalRounds: totalRounds,
-                                    score: score,
-                                    correctCount: correctCount,
-                                    onHome: () => _goHome(context),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),

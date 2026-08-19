@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import '../providers/cat_state.dart';
-import '../services/mqtt_service.dart';
+import '../ble/robot_ble_service.dart';
 
 late CatState _cat;
-
 
 void initGameLogic(CatState cat) {
   _cat = cat;
@@ -11,17 +12,20 @@ void initGameLogic(CatState cat) {
 void onGameWin() {
   _cat.endGame(); // ⭐⭐ สำคัญมาก
 
-  MqttService.I.send({
-    "type": "eye",
-    "mode": "heart",
-  });
-
-  MqttService.I.send({
-    "type": "tail",
-    "action": "wag",
-  });
+  unawaited(_sendRobotWinFeedback());
 
   playMp3("assets/effects/game_win.mp3");
+}
+
+Future<void> _sendRobotWinFeedback() async {
+  final ble = RobotBleService.I;
+  if (!ble.isConnected) return;
+  try {
+    await ble.setEyeMode('heart');
+    await ble.wagTail();
+  } catch (_) {
+    // Game flow stays independent from a transient BLE disconnection.
+  }
 }
 
 void playMp3(String name) {

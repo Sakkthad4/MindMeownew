@@ -1,4 +1,6 @@
-import '../services/mqtt_service.dart';
+import 'dart:async';
+
+import '../ble/robot_ble_service.dart';
 import '../providers/cat_state.dart';
 
 void onMindTalkResponse(String intent, CatState cat) {
@@ -29,10 +31,15 @@ void onMindTalkResponse(String intent, CatState cat) {
 }
 
 void sendEmotion(String mode) {
-  MqttService.I.send({
-    "type": "eye",
-    "mode": mode,
-  });
+  final ble = RobotBleService.I;
+  if (!ble.isConnected) return;
+
+  final eyeMode = switch (mode) {
+    'happy' => 'heart',
+    'angry' => 'red',
+    _ => 'normal',
+  };
+  unawaited(ble.setEyeMode(eyeMode).catchError((Object _) {}));
 }
 
 void playMp3(String name) {

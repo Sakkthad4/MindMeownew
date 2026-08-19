@@ -55,6 +55,8 @@
   <string>MindMeow ต้องใช้การรู้จำเสียงพูดเพื่อแปลงเสียงเป็นข้อความ</string>
   <key>NSCameraUsageDescription</key>
   <string>MindMeow ต้องใช้กล้องเพื่อตรวจจับท่ายืดเส้นยืดสาย</string>
+  <key>NSBluetoothAlwaysUsageDescription</key>
+  <string>MindMeow ต้องใช้ Bluetooth เพื่อเชื่อมต่อและทดสอบอุปกรณ์ของหุ่นยนต์แมว</string>
 
   <key>NSAppTransportSecurity</key>
   <dict>

@@ -7,6 +7,7 @@ import '../healthcare/data/chart_store.dart';
 import 'cat_paw_difficulty_screen.dart';
 import 'cat_paw_result_page.dart';
 import '../healthcare/data/cat_bond_store.dart';
+import '../audio/page_voice.dart';
 
 class CatPawGamePage extends StatefulWidget {
   final CatPawDifficulty difficulty;
@@ -202,156 +203,159 @@ class _CatPawGamePageState extends State<CatPawGamePage> {
   Widget build(BuildContext context) {
     // UI sizing for elderly
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              "assets/bg/catpaw_bg.png",
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
-                  Container(color: const Color(0xFFFFF7F0)),
+      body: PageVoice(
+        assetPath: VoiceAssets.catchPaw,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                "assets/bg/catpaw_bg.png",
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    Container(color: const Color(0xFFFFF7F0)),
+              ),
             ),
-          ),
-          Positioned.fill(
-            child: Container(color: Colors.white.withValues(alpha: 0.1)),
-          ),
+            Positioned.fill(
+              child: Container(color: Colors.white.withValues(alpha: 0.1)),
+            ),
 
-          SafeArea(
-            child: LayoutBuilder(
-              builder: (context, c) {
-                final w = c.maxWidth;
-                final h = c.maxHeight;
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, c) {
+                  final w = c.maxWidth;
+                  final h = c.maxHeight;
 
-                final bool wide = w >= 900;
-                final double topPad = wide ? 16 : 14;
+                  final bool wide = w >= 900;
+                  final double topPad = wide ? 16 : 14;
 
-                final double statBoxW = (w * 0.22).clamp(160.0, 260.0);
-                final double statBoxH = (h * 0.12).clamp(90.0, 130.0);
+                  final double statBoxW = (w * 0.22).clamp(160.0, 260.0);
+                  final double statBoxH = (h * 0.12).clamp(90.0, 130.0);
 
-                final double boardH = (h * 0.68).clamp(420.0, 760.0);
+                  final double boardH = (h * 0.68).clamp(420.0, 760.0);
 
-                final titleSize = (w / 20).clamp(26.0, 42.0);
+                  final titleSize = (w / 20).clamp(26.0, 42.0);
 
-                return Column(
-                  children: [
-                    SizedBox(height: topPad),
+                  return Column(
+                    children: [
+                      SizedBox(height: topPad),
 
-                    // TOP STATS ROW (HITS / MISS / TIME)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _StatBox(
-                            width: statBoxW,
-                            height: statBoxH,
-                            title: "",
-                            value: _hits.toString(),
-                            valueColor: const Color(0xFF7ED957),
-                          ),
-                          _StatBox(
-                            width: statBoxW,
-                            height: statBoxH,
-                            title: "",
-                            value: _miss.toString(),
-                            valueColor: const Color(0xFFEF5A5A),
-                          ),
-                          _TimeBox(
-                            width: (statBoxW * 0.70).clamp(120.0, 190.0),
-                            height: statBoxH,
-                            seconds: _timeLeft,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Big board
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
-                        child: Container(
-                          height: boardH,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(26),
-                            border: Border.all(
-                              color: const Color(0xFFFF9800),
-                              width: 8,
+                      // TOP STATS ROW (HITS / MISS / TIME)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _StatBox(
+                              width: statBoxW,
+                              height: statBoxH,
+                              title: "",
+                              value: _hits.toString(),
+                              valueColor: const Color(0xFF7ED957),
                             ),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x22000000),
-                                blurRadius: 20,
-                                offset: Offset(0, 12),
+                            _StatBox(
+                              width: statBoxW,
+                              height: statBoxH,
+                              title: "",
+                              value: _miss.toString(),
+                              valueColor: const Color(0xFFEF5A5A),
+                            ),
+                            _TimeBox(
+                              width: (statBoxW * 0.70).clamp(120.0, 190.0),
+                              height: statBoxH,
+                              seconds: _timeLeft,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Big board
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
+                          child: Container(
+                            height: boardH,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(26),
+                              border: Border.all(
+                                color: const Color(0xFFFF9800),
+                                width: 8,
                               ),
-                            ],
-                          ),
-                          child: LayoutBuilder(
-                            builder: (context, bc) {
-                              final bw = bc.maxWidth;
-                              final bh = bc.maxHeight;
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x22000000),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 12),
+                                ),
+                              ],
+                            ),
+                            child: LayoutBuilder(
+                              builder: (context, bc) {
+                                final bw = bc.maxWidth;
+                                final bh = bc.maxHeight;
 
-                              // paw size BIG
-                              final pawSize = min(
-                                bw * 0.18,
-                                120.0,
-                              ).clamp(90.0, 140.0);
+                                // paw size BIG
+                                final pawSize = min(
+                                  bw * 0.18,
+                                  120.0,
+                                ).clamp(90.0, 140.0);
 
-                              Offset clampToBoard(Offset n) {
-                                final margin = 18.0;
-                                final x = (n.dx * bw).clamp(
-                                  margin,
-                                  bw - margin,
-                                );
-                                final y = (n.dy * bh).clamp(
-                                  margin,
-                                  bh - margin,
-                                );
-                                return Offset(x, y);
-                              }
+                                Offset clampToBoard(Offset n) {
+                                  final margin = 18.0;
+                                  final x = (n.dx * bw).clamp(
+                                    margin,
+                                    bw - margin,
+                                  );
+                                  final y = (n.dy * bh).clamp(
+                                    margin,
+                                    bh - margin,
+                                  );
+                                  return Offset(x, y);
+                                }
 
-                              return Stack(
-                                children: [
-                                  // optional title inside board (subtle)
-                                  Positioned(
-                                    top: 14,
-                                    left: 16,
-                                    child: Text(
-                                      AppText.get('tapPaw'),
-                                      style: TextStyle(
-                                        fontSize: (titleSize * 0.55).clamp(
-                                          14.0,
-                                          20.0,
+                                return Stack(
+                                  children: [
+                                    // optional title inside board (subtle)
+                                    Positioned(
+                                      top: 14,
+                                      left: 16,
+                                      child: Text(
+                                        AppText.get('tapPaw'),
+                                        style: TextStyle(
+                                          fontSize: (titleSize * 0.55).clamp(
+                                            14.0,
+                                            20.0,
+                                          ),
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.black54,
                                         ),
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.black54,
                                       ),
                                     ),
-                                  ),
 
-                                  // Cells
-                                  for (int i = 0; i < _cells.length; i++)
-                                    _PawCell(
-                                      center: clampToBoard(_cells[i]),
-                                      size: pawSize,
-                                      isActive: _showing && i == _activeIndex,
-                                      onTap: () => _tapCell(i),
-                                    ),
-                                ],
-                              );
-                            },
+                                    // Cells
+                                    for (int i = 0; i < _cells.length; i++)
+                                      _PawCell(
+                                        center: clampToBoard(_cells[i]),
+                                        size: pawSize,
+                                        isActive: _showing && i == _activeIndex,
+                                        onTap: () => _tapCell(i),
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

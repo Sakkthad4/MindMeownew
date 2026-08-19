@@ -6,6 +6,7 @@ import 'data.dart';
 import 'models.dart';
 import 'ui_sm.dart';
 import '../logic/game_logic.dart';
+import '../audio/page_voice.dart';
 
 class ResultScreen extends StatefulWidget {
   final Order order;
@@ -112,206 +113,210 @@ class _ResultScreenState extends State<ResultScreen> {
     }
 
     return Scaffold(
-      body: SM.bgPattern(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(26),
-            child: Column(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      // LEFT column (menu + accuracy)
-                      Expanded(
-                        flex: 4,
-                        child: Column(
-                          children: [
-                            // menu card
-                            Container(
-                              height: 320,
-                              width: double.infinity,
-                              decoration: SM.orangeFrame(r: 34),
-                              padding: const EdgeInsets.all(18),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 180,
-                                    height: 180,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0x00000000),
-                                    ),
-                                    child: Image.asset(
-                                      widget.order.plateAsset,
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (_, __, ___) => const Icon(
-                                        Icons.image_not_supported,
-                                        size: 80,
-                                        color: Colors.black26,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 34,
-                                      vertical: 14,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: SM.softOrange,
-                                      borderRadius: BorderRadius.circular(24),
-                                    ),
-                                    child: Text(
-                                      AppText.name(widget.order.name),
-                                      style: TextStyle(
-                                        fontSize: 30 * SM.scale(context),
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-
-                            // Accuracy card
-                            Expanded(
-                              child: Container(
+      body: PageVoice(
+        assetPath: VoiceAssets.delicious,
+        child: SM.bgPattern(
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(26),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        // LEFT column (menu + accuracy)
+                        Expanded(
+                          flex: 4,
+                          child: Column(
+                            children: [
+                              // menu card
+                              Container(
+                                height: 320,
                                 width: double.infinity,
                                 decoration: SM.orangeFrame(r: 34),
-                                padding: const EdgeInsets.all(22),
-                                child: _AccuracyPanel(
-                                  acc: accuracyPercent,
-                                  rankText: label,
-                                  accColor: accColor,
-                                  bigNumber: 78 * SM.scale(context),
-                                  bigTitle: 34 * SM.scale(context),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(width: 24),
-
-                      // RIGHT column (requirements + collected row)
-                      Expanded(
-                        flex: 8,
-                        child: Column(
-                          children: [
-                            // Requirements panel
-                            Expanded(
-                              flex: 7,
-                              child: Container(
-                                decoration: SM.orangeFrame(r: 34),
-                                padding: const EdgeInsets.all(22),
+                                padding: const EdgeInsets.all(18),
                                 child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    SM.orangeHeaderPill(
-                                      context,
-                                      AppText.get('requirement'),
+                                    Container(
+                                      width: 180,
+                                      height: 180,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0x00000000),
+                                      ),
+                                      child: Image.asset(
+                                        widget.order.plateAsset,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, __, ___) =>
+                                            const Icon(
+                                              Icons.image_not_supported,
+                                              size: 80,
+                                              color: Colors.black26,
+                                            ),
+                                      ),
                                     ),
-                                    const SizedBox(height: 18),
-                                    Expanded(
-                                      child: ListView.separated(
-                                        itemCount: reqList.length,
-                                        separatorBuilder: (_, __) =>
-                                            const SizedBox(height: 18),
-                                        itemBuilder: (_, i) {
-                                          final id = reqList[i].key;
-                                          final reqQty = reqList[i].value;
-                                          final got = widget.cart[id] ?? 0;
-                                          final ing = ingredientById(id);
-
-                                          return _ReqLine(
-                                            name: AppText.name(ing.name),
-                                            asset: ing.asset,
-                                            reqQty: reqQty,
-                                            gotQty: got,
-                                          );
-                                        },
+                                    const SizedBox(height: 16),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 34,
+                                        vertical: 14,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: SM.softOrange,
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      child: Text(
+                                        AppText.name(widget.order.name),
+                                        style: TextStyle(
+                                          fontSize: 30 * SM.scale(context),
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: 20),
 
-                            const SizedBox(height: 22),
-
-                            // Collected panel (bottom row)
-                            Container(
-                              height: 210,
-                              decoration: SM.orangeFrame(r: 34),
-                              padding: const EdgeInsets.all(18),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: ListView.separated(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: collectedIds.length,
-                                      separatorBuilder: (_, __) =>
-                                          const SizedBox(width: 18),
-                                      itemBuilder: (_, i) {
-                                        final id = collectedIds[i];
-                                        final qty = widget.cart[id] ?? 0;
-
-                                        final reqQty = required[id] ?? 0;
-                                        final status = _chipStatus(
-                                          reqQty: reqQty,
-                                          gotQty: qty,
-                                        );
-
-                                        final ing = ingredientById(id);
-
-                                        return _CollectedChip(
-                                          label: AppText.name(ing.name),
-                                          asset: ing.asset,
-                                          qty: qty,
-                                          status: status,
-                                        );
-                                      },
-                                    ),
+                              // Accuracy card
+                              Expanded(
+                                child: Container(
+                                  width: double.infinity,
+                                  decoration: SM.orangeFrame(r: 34),
+                                  padding: const EdgeInsets.all(22),
+                                  child: _AccuracyPanel(
+                                    acc: accuracyPercent,
+                                    rankText: label,
+                                    accColor: accColor,
+                                    bigNumber: 78 * SM.scale(context),
+                                    bigTitle: 34 * SM.scale(context),
                                   ),
-                                  const SizedBox(width: 14),
-                                  SizedBox(
-                                    width: 260,
-                                    child: ElevatedButton(
-                                      style: SM.bigOrangeBtn(context),
-                                      onPressed: () async {
-                                        await _saveOnce(
-                                          game: 'supermarket',
-                                          difficulty: widget.difficulty.name,
-                                          accuracyPercent:
-                                              accuracyPercent, // ✅ เพิ่ม (ตัวแปรใน build)
-                                          hits: correctUnits,
-                                          miss: missingUnits + extraUnits,
-                                        );
-
-                                        if (!context.mounted) return;
-                                        Navigator.of(
-                                          context,
-                                        ).pushNamedAndRemoveUntil(
-                                          '/home',
-                                          (r) => false,
-                                        );
-                                      },
-
-                                      child: Text(AppText.get('home')),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+
+                        const SizedBox(width: 24),
+
+                        // RIGHT column (requirements + collected row)
+                        Expanded(
+                          flex: 8,
+                          child: Column(
+                            children: [
+                              // Requirements panel
+                              Expanded(
+                                flex: 7,
+                                child: Container(
+                                  decoration: SM.orangeFrame(r: 34),
+                                  padding: const EdgeInsets.all(22),
+                                  child: Column(
+                                    children: [
+                                      SM.orangeHeaderPill(
+                                        context,
+                                        AppText.get('requirement'),
+                                      ),
+                                      const SizedBox(height: 18),
+                                      Expanded(
+                                        child: ListView.separated(
+                                          itemCount: reqList.length,
+                                          separatorBuilder: (_, __) =>
+                                              const SizedBox(height: 18),
+                                          itemBuilder: (_, i) {
+                                            final id = reqList[i].key;
+                                            final reqQty = reqList[i].value;
+                                            final got = widget.cart[id] ?? 0;
+                                            final ing = ingredientById(id);
+
+                                            return _ReqLine(
+                                              name: AppText.name(ing.name),
+                                              asset: ing.asset,
+                                              reqQty: reqQty,
+                                              gotQty: got,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 22),
+
+                              // Collected panel (bottom row)
+                              Container(
+                                height: 210,
+                                decoration: SM.orangeFrame(r: 34),
+                                padding: const EdgeInsets.all(18),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: ListView.separated(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: collectedIds.length,
+                                        separatorBuilder: (_, __) =>
+                                            const SizedBox(width: 18),
+                                        itemBuilder: (_, i) {
+                                          final id = collectedIds[i];
+                                          final qty = widget.cart[id] ?? 0;
+
+                                          final reqQty = required[id] ?? 0;
+                                          final status = _chipStatus(
+                                            reqQty: reqQty,
+                                            gotQty: qty,
+                                          );
+
+                                          final ing = ingredientById(id);
+
+                                          return _CollectedChip(
+                                            label: AppText.name(ing.name),
+                                            asset: ing.asset,
+                                            qty: qty,
+                                            status: status,
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    SizedBox(
+                                      width: 260,
+                                      child: ElevatedButton(
+                                        style: SM.bigOrangeBtn(context),
+                                        onPressed: () async {
+                                          await _saveOnce(
+                                            game: 'supermarket',
+                                            difficulty: widget.difficulty.name,
+                                            accuracyPercent:
+                                                accuracyPercent, // ✅ เพิ่ม (ตัวแปรใน build)
+                                            hits: correctUnits,
+                                            miss: missingUnits + extraUnits,
+                                          );
+
+                                          if (!context.mounted) return;
+                                          Navigator.of(
+                                            context,
+                                          ).pushNamedAndRemoveUntil(
+                                            '/home',
+                                            (r) => false,
+                                          );
+                                        },
+
+                                        child: Text(AppText.get('home')),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

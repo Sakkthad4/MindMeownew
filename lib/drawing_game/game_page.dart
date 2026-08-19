@@ -8,6 +8,7 @@ import 'models.dart';
 import 'templates.dart';
 import 'result_page.dart';
 import 'dart:math';
+import '../audio/page_voice.dart';
 
 class DrawingGamePage extends StatefulWidget {
   const DrawingGamePage({super.key, required this.difficulty});
@@ -102,27 +103,41 @@ class _DrawingGamePageState extends State<DrawingGamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
+      body: PageVoice(
+        assetPath: VoiceAssets.letsDrawing,
+        child: Stack(
           children: [
-            // ================= TOP =================
-            Expanded(
-              child: Row(
-                children: [_frame(_templatePanel()), _frame(_canvasPanel())],
-              ),
+            Positioned.fill(
+              child: Image.asset('assets/bg/drawitbg.png', fit: BoxFit.cover),
             ),
-
-            // ================= TOOLS =================
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-              child: Row(
+            Positioned.fill(child: ColoredBox(color: Color(0x1FFFFFFF))),
+            SafeArea(
+              child: Column(
                 children: [
-                  _tool(Icons.edit, false),
-                  _tool(Icons.auto_fix_high, true),
-                  const Spacer(),
-                  _timerBadge(),
-                  const SizedBox(width: 14),
-                  _finishButton(),
+                  // ================= TOP =================
+                  Expanded(
+                    child: Row(
+                      children: [
+                        _frame(_templatePanel()),
+                        _frame(_canvasPanel()),
+                      ],
+                    ),
+                  ),
+
+                  // ================= TOOLS =================
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                    child: Row(
+                      children: [
+                        _tool(Icons.edit, false),
+                        _tool(Icons.auto_fix_high, true),
+                        const Spacer(),
+                        _timerBadge(),
+                        const SizedBox(width: 14),
+                        _finishButton(),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

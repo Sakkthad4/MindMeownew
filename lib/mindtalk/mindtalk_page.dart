@@ -151,12 +151,12 @@ class _MindTalkPageState extends State<MindTalkPage> {
       });
 
       await _stt.listen(
-        localeId: kLangs[_currentLang]!.sttLocale,
         onResult: (r) {
           if (!mounted) return;
           setState(() => _partial = r.recognizedWords);
         },
         listenOptions: stt.SpeechListenOptions(
+          localeId: kLangs[_currentLang]!.sttLocale,
           partialResults: true,
           listenMode: stt.ListenMode.dictation,
         ),

@@ -12,7 +12,11 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: Padding(
         padding: const EdgeInsets.only(left: 23),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 44, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 44,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
@@ -39,7 +43,9 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
           builder: (_, isMuted, __) {
             return IconButton(
               icon: Icon(
-                isMuted ? Icons.music_off : Icons.music_note, // หรือ volume_off / volume_up
+                isMuted
+                    ? Icons.music_off
+                    : Icons.music_note, // หรือ volume_off / volume_up
                 size: 70,
                 color: Colors.white,
               ),
@@ -48,6 +54,12 @@ class MyAppBar extends StatelessWidget implements PreferredSizeWidget {
               },
             );
           },
+        ),
+
+        IconButton(
+          tooltip: 'Hardware Test',
+          icon: const Icon(Icons.developer_board, size: 66),
+          onPressed: () => Navigator.pushNamed(context, '/hardware-test'),
         ),
 
         Padding(

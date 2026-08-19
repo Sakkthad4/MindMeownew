@@ -7,7 +7,7 @@ import 'models.dart';
 import 'order_brief_screen.dart';
 import 'ui_sm.dart';
 
-import '../audio/soundeffect.dart';
+import '../audio/page_voice.dart';
 
 class GachaScreen extends StatefulWidget {
   final Difficulty difficulty;
@@ -125,112 +125,98 @@ class _GachaScreenState extends State<GachaScreen> {
     final scale = SM.scale(context);
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // ✅ BG รูปอยู่ "ล่างสุด"
-          Positioned.fill(
-            child: Image.asset(
-              "assets/bg/supermarketbg.png",
-              fit: BoxFit.cover,
-            ),
-          ),
-
-          // ✅ ของเดิม: bgPattern + UI
-          SM.bgPattern(
-            child: SafeArea(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // ===== Menu Card =====
-                    Container(
-                      width: 520,
-                      height: 420,
-                      decoration: SM.orangeFrame(r: 34),
-                      padding: const EdgeInsets.all(18),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: _current == null
-                                ? const Icon(
-                                    Icons.restaurant,
-                                    size: 120,
-                                    color: Colors.black26,
-                                  )
-                                : Hero(
-                                    tag: _heroTag,
-                                    child: Image.asset(
-                                      _current!.plateAsset,
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (_, __, ___) => const Icon(
-                                        Icons.image_not_supported,
-                                        size: 120,
+      body: PageVoice(
+        assetPath: VoiceAssets.randomMenu,
+        child: Stack(
+          children: [
+            SM.bgPattern(
+              child: SafeArea(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // ===== Menu Card =====
+                      Container(
+                        width: 520,
+                        height: 420,
+                        decoration: SM.orangeFrame(r: 34),
+                        padding: const EdgeInsets.all(18),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: _current == null
+                                  ? const Icon(
+                                      Icons.restaurant,
+                                      size: 120,
+                                      color: Colors.black26,
+                                    )
+                                  : Hero(
+                                      tag: _heroTag,
+                                      child: Image.asset(
+                                        _current!.plateAsset,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, __, ___) =>
+                                            const Icon(
+                                              Icons.image_not_supported,
+                                              size: 120,
+                                            ),
                                       ),
                                     ),
-                                  ),
-                          ),
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 36,
-                              vertical: 14,
                             ),
-                            decoration: BoxDecoration(
-                              color: SM.softOrange,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Text(
-                              _current == null
-                                  ? AppText.get('menu')
-                                  : AppText.name(_current!.name),
-                              style: TextStyle(
-                                fontSize: 30 * scale,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 36,
+                                vertical: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: SM.softOrange,
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Text(
+                                _current == null
+                                    ? AppText.get('menu')
+                                    : AppText.name(_current!.name),
+                                style: TextStyle(
+                                  fontSize: 30 * scale,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // ===== Roll Button =====
-                    SizedBox(
-                      width: 300,
-                      height: 76,
-                      child: ElevatedButton.icon(
-                        style: SM.bigOrangeBtn(context),
-                        icon: const Icon(Icons.casino, size: 25),
-                        label: Text(
-                          _rolling
-                              ? AppText.get('rolling')
-                              : AppText.get('roll'),
-                          style: TextStyle(
-                            fontSize: 30 * scale,
-                            fontWeight: FontWeight.w900,
-                          ),
+                          ],
                         ),
-                        onPressed: _rolling
-                            ? null
-                            : () {
-                                SoundFx.play(
-                                  SoundFx.hungry,
-                                  volume: SoundFx.hungryVolume,
-                                );
-
-                                _roll(context);
-                              },
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 32),
+
+                      // ===== Roll Button =====
+                      SizedBox(
+                        width: 300,
+                        height: 76,
+                        child: ElevatedButton.icon(
+                          style: SM.bigOrangeBtn(context),
+                          icon: const Icon(Icons.casino, size: 25),
+                          label: Text(
+                            _rolling
+                                ? AppText.get('rolling')
+                                : AppText.get('roll'),
+                            style: TextStyle(
+                              fontSize: 30 * scale,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          onPressed: _rolling ? null : () => _roll(context),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

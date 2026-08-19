@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -6,9 +9,10 @@ import 'home_page.dart';
 import 'second_page.dart';
 import 'gameBox_page.dart';
 import 'calendar_page.dart';
-import 'mqtt_test_page.dart';
 import 'mindtalk/mindtalk_page.dart';
 import 'cat_paw_loading_page.dart';
+import 'ble/hardware_test_page.dart';
+import 'ble/robot_ble_service.dart';
 
 import 'supermarket/difficulty_screen.dart';
 import 'Dicedash/pages/difficulty_page.dart' as dicedash;
@@ -27,28 +31,89 @@ import 'healthcare/models/game_result.dart';
 import 'healthcare/models/cat_bond.dart';
 import 'healthcare/models/mindtalk_emotion_event.dart';
 
-import 'services/mqtt_service.dart';
 import 'providers/cat_state.dart';
 
 import 'route_observer.dart';
 
 import 'game_logic.dart';
-import 'services/mqtt_dispatcher.dart';
+import 'services/robot_event_dispatcher.dart';
 
-import 'touch_collector_page.dart';
 import 'audio/soundeffect.dart';
 import 'app_language.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final catState = CatState();
-  final dispatcher = MqttDispatcher(catState);
-  initGameLogic(catState);
+  runApp(const AppBootstrap());
+}
 
+class AppBootstrap extends StatefulWidget {
+  const AppBootstrap({super.key});
+
+  @override
+  State<AppBootstrap> createState() => _AppBootstrapState();
+}
+
+class _AppBootstrapState extends State<AppBootstrap> {
+  late final Future<void> _initialization;
+  late final RobotEventDispatcher _dispatcher;
+  StreamSubscription<Map<String, dynamic>>? _robotEventSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final catState = CatState();
+    _dispatcher = RobotEventDispatcher(catState);
+    initGameLogic(catState);
+    _initialization = _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await _initializeLocalData().timeout(const Duration(seconds: 15));
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'MindMeow startup',
+          context: ErrorDescription('while initializing local app data'),
+        ),
+      );
+      rethrow;
+    }
+
+    _robotEventSubscription = RobotBleService.I.events.listen(
+      (event) => unawaited(_dispatcher.handle(event)),
+    );
+  }
+
+  @override
+  void dispose() {
+    _robotEventSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: _initialization,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return StartupErrorApp(error: snapshot.error!);
+        }
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const StartupLoadingApp();
+        }
+        return const MyApp();
+      },
+    );
+  }
+}
+
+Future<void> _initializeLocalData() async {
   await Hive.initFlutter();
   await AppLanguageController.load();
-
-  await MqttService.I.connect(onEvent: dispatcher.handle);
 
   final adapter = GameResultAdapter();
   if (!Hive.isAdapterRegistered(adapter.typeId)) {
@@ -68,10 +133,93 @@ Future<void> main() async {
   await CatBondStore.init();
   await MindTalkEmotionStore.init();
   await ExerciseSessionStore.init();
-
   await ChartStore.init();
+}
 
-  runApp(const MyApp());
+class StartupErrorApp extends StatelessWidget {
+  const StartupErrorApp({super.key, required this.error});
+
+  final Object error;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: const Color(0xFFFFF3E0),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.deepOrange,
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'MindMeow could not start',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Please refresh the page. If the problem continues, '
+                    'check the browser console for the startup error.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  if (kDebugMode) ...[
+                    const SizedBox(height: 20),
+                    SelectableText(
+                      error.toString(),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class StartupLoadingApp extends StatelessWidget {
+  const StartupLoadingApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Colors.orange,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: Colors.white),
+              SizedBox(height: 24),
+              Text(
+                'MindMeow',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 34,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -116,7 +264,7 @@ class MyApp extends StatelessWidget {
 
             '/gemini': (context) => const MindTalkPage(),
             '/geminiloop': (context) => const MindTalkPage(),
-            '/MQTT': (context) => const MqttSimplePage(),
+            '/hardware-test': (context) => const HardwareTestPage(),
             '/loadpg': (context) => const CatPawLoadingPage(),
           },
 
@@ -176,13 +324,6 @@ class StartPage extends StatelessWidget {
                     color: Colors.orange,
                   ),
                 ),
-              ),
-              TouchCollectorPage(
-                brokerHost: '192.168.1.10',
-                clientId: 'flutter-touch-collector-01',
-                onAddXp: (xp) async {
-                  await CatBondStore().addXp(amount: xp, source: 'touch');
-                },
               ),
             ],
           ),

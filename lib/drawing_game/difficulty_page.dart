@@ -24,10 +24,7 @@ class DrawingDifficultyPage extends StatelessWidget {
           children: [
             // BG (เปลี่ยน path ให้ตรง asset ของคุณ)
             Positioned.fill(
-              child: Image.asset(
-                "assets/bg/supermarketbg.png",
-                fit: BoxFit.cover,
-              ),
+              child: Image.asset("assets/bg/drawitbg.png", fit: BoxFit.cover),
             ),
             // overlay จาง
             Positioned.fill(

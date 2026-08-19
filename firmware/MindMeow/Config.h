@@ -1,0 +1,30 @@
+#pragma once
+
+// Final ESP32-S3 GPIO map. Keep this file as the single source of truth.
+#define TOUCH_HEAD 13
+#define SERVO_HEAD 15
+#define SERVO_TAIL 16
+
+#define TFT_SCLK 12
+#define TFT_MOSI 11
+#define TFT_DC 10
+#define TFT_CS_LEFT 7
+#define TFT_CS_RIGHT 8
+#define TFT_RST 9
+
+// The GC9A01A pair is write-only, so MISO is deliberately not connected.
+#define TFT_MISO -1
+
+#define HEAD_MIN_ANGLE 60
+#define HEAD_CENTER_ANGLE 90
+#define HEAD_MAX_ANGLE 120
+
+#define TAIL_MIN_ANGLE 50
+#define TAIL_CENTER_ANGLE 90
+#define TAIL_MAX_ANGLE 130
+
+#define MINDMEOW_DEVICE_NAME "MINDMEOW_CAT"
+#define MINDMEOW_PROTOCOL_VERSION 1
+#define MINDMEOW_SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+#define MINDMEOW_COMMAND_UUID "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+#define MINDMEOW_EVENT_UUID "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"

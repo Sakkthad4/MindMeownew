@@ -48,11 +48,11 @@ dependencies:
   table_calendar: ^3.1.2
   flutter_local_notifications: ^17.2.2
   timezone: ^0.9.4
-  flutter_timezone: ^1.0.8
+  flutter_timezone: ^5.1.0
   flutter_tts: 3.8.5
-  speech_to_text: ^6.6.2
+  speech_to_text: ^7.4.0
   http: ^1.2.2
-  mqtt_client: ^10.0.0
+  flutter_blue_plus: 2.3.12
 
 dev_dependencies:
   flutter_test:
@@ -94,6 +94,7 @@ flutter:
     - assets/bg/
     - assets/icons/
     - assets/effects/
+    - assets/voice/
     - assets/models/
 
   # An image asset can refer to one or more resolution-specific "variants", see

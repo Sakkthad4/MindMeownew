@@ -64,10 +64,17 @@ class SM {
   );
 
   static Widget bgPattern({required Widget child}) {
-    // Placeholder background (you will replace with Image.asset later)
     return Container(
-      decoration: const BoxDecoration(color: Color(0xFFF7F7F7)),
-      child: child,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/bg/supermarketbg.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Container(
+        color: Colors.white.withValues(alpha: 0.10),
+        child: child,
+      ),
     );
   }
 

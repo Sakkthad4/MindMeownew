@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test22/appBar.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import 'app_language.dart';
 
 class GameMenuPage extends StatelessWidget {
@@ -12,41 +13,63 @@ class GameMenuPage extends StatelessWidget {
       appBar: MyAppBar(),
       backgroundColor: Colors.white,
       body: Padding(
-        padding: const EdgeInsets.only(
-          left: 35,
-          right: 20,
-          top: 20,
-          bottom: 16,
-        ),
-        child: Scrollbar(
-          thumbVisibility: true,
-          thickness: 14,
-          radius: const Radius.circular(10),
-          child: ListView(
-            padding: const EdgeInsets.only(right: 40),
-            children: [
-              GameBox(
-                AppText.get('supermarket'),
-                'assets/images/MindMeowgamesSupermarket.png',
-                '/supermarket',
+        padding: const EdgeInsets.all(20),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const gap = 28.0;
+            final gridWidth = constraints.maxWidth > 1320
+                ? 1320.0
+                : constraints.maxWidth;
+            final gridHeight = constraints.maxHeight > 560
+                ? 560.0
+                : constraints.maxHeight;
+            final cardWidth = (gridWidth - gap) / 2;
+            final cardHeight = (gridHeight - gap) / 2;
+
+            final games = [
+              (
+                title: AppText.get('supermarket'),
+                image: 'assets/images/MindMeowgamesSupermarket.png',
+                route: '/supermarket',
               ),
-              GameBox(
-                AppText.get('diceDash'),
-                'assets/images/MindMeowgamesDice.png',
-                '/dicedash',
+              (
+                title: AppText.get('diceDash'),
+                image: 'assets/images/MindMeowgamesDice.png',
+                route: '/dicedash',
               ),
-              GameBox(
-                AppText.get('catPaw'),
-                'assets/images/MindMeowgamesPaws.png',
-                '/catpaw',
+              (
+                title: AppText.get('catPaw'),
+                image: 'assets/images/MindMeowgamesPaws.png',
+                route: '/catpaw',
               ),
-              GameBox(
-                AppText.get('draw'),
-                'assets/images/MindMeowgamesDraw.png',
-                '/drawvis',
+              (
+                title: AppText.get('draw'),
+                image: 'assets/images/MindMeowgamesDraw.png',
+                route: '/drawvis',
               ),
-            ],
-          ),
+            ];
+
+            return Center(
+              child: SizedBox(
+                width: gridWidth,
+                height: gridHeight,
+                child: GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: games.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: gap,
+                    mainAxisSpacing: gap,
+                    childAspectRatio: cardWidth / cardHeight,
+                  ),
+                  itemBuilder: (context, index) {
+                    final game = games[index];
+                    return GameBox(game.title, game.image, game.route);
+                  },
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -54,53 +77,61 @@ class GameMenuPage extends StatelessWidget {
 }
 
 class GameBox extends StatelessWidget {
+  const GameBox(this.title, this.imagePath, this.gamesgo, {super.key});
+
   final String title;
   final String imagePath;
   final String gamesgo;
 
-  const GameBox(this.title, this.imagePath, this.gamesgo, {super.key});
-
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        print("Tapped $title → going to $gamesgo");
-        Navigator.pushNamed(context, gamesgo);
-      },
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.pushNamed(context, gamesgo),
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.orange, width: 6),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final iconSize = (constraints.maxHeight * 0.92).clamp(
+                96.0,
+                230.0,
+              );
+              final fontSize = (constraints.maxWidth / 10.5).clamp(32.0, 60.0);
 
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: SizedBox(
-          width: 1200,
-          height: 200,
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 20),
-            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.orange, width: 6),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 150,
-                  height: 150,
-                  child: Image.asset(imagePath, fit: BoxFit.contain),
-                ),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: GoogleFonts.montserrat(
-                      color: Colors.orange,
-                      fontSize: 60,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+              return Row(
+                children: [
+                  SizedBox(
+                    width: iconSize,
+                    height: iconSize,
+                    child: Image.asset(imagePath, fit: BoxFit.contain),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        style: GoogleFonts.montserrat(
+                          color: Colors.orange,
+                          fontSize: fontSize,
+                          height: 1,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
