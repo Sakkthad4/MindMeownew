@@ -10,6 +10,7 @@ import 'dart:math' as math;
 
 import 'exercise_pose_geometry.dart';
 import 'healthcare/data/exercise_session_store.dart';
+import 'audio/page_voice.dart';
 
 class MindExercisesPage extends StatefulWidget {
   const MindExercisesPage({super.key});
@@ -617,27 +618,30 @@ class _MindExercisesPageState extends State<MindExercisesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8EC),
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFFFFBF4), Color(0xFFFFEED7)],
+      body: PageVoice(
+        assetPath: VoiceAssets.exercise,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFFFBF4), Color(0xFFFFEED7)],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-            child: Column(
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: _isCompleted
-                      ? _buildCompletedView()
-                      : _buildGameView(),
-                ),
-              ],
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: _isCompleted
+                        ? _buildCompletedView()
+                        : _buildGameView(),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

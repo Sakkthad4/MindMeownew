@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../app_language.dart';
 import 'cat_paw_difficulty_screen.dart';
 import '../audio/page_voice.dart';
+import '../ble/robot_celebration.dart';
 
 class CatPawResultPage extends StatelessWidget {
   final CatPawDifficulty difficulty;
@@ -44,146 +45,151 @@ class CatPawResultPage extends StatelessWidget {
     final acc = accuracyPercent.clamp(0, 100).toDouble();
 
     return Scaffold(
-      body: PageVoice(
-        assetPath: VoiceAssets.greatJob,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Image.asset(
-                "assets/bg/catpaw_bg.png",
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    Container(color: const Color(0xFFFFF7F0)),
+      body: RobotCelebration(
+        child: PageVoice(
+          assetPath: VoiceAssets.greatJob,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Image.asset(
+                  "assets/bg/catpaw_bg.png",
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      Container(color: const Color(0xFFFFF7F0)),
+                ),
               ),
-            ),
-            Positioned.fill(
-              child: Container(color: Colors.white.withValues(alpha: 0.1)),
-            ),
+              Positioned.fill(
+                child: Container(color: Colors.white.withValues(alpha: 0.1)),
+              ),
 
-            SafeArea(
-              child: LayoutBuilder(
-                builder: (context, c) {
-                  final w = c.maxWidth;
-                  final bool wide = w >= 900;
+              SafeArea(
+                child: LayoutBuilder(
+                  builder: (context, c) {
+                    final w = c.maxWidth;
+                    final bool wide = w >= 900;
 
-                  final outerPad = const EdgeInsets.fromLTRB(18, 16, 18, 18);
+                    final outerPad = const EdgeInsets.fromLTRB(18, 16, 18, 18);
 
-                  final cardRadius = 28.0;
-                  final borderW = 8.0;
+                    final cardRadius = 28.0;
+                    final borderW = 8.0;
 
-                  final bigTitle = (w / 20).clamp(24.0, 38.0);
-                  final bigNumber = (w / 10).clamp(52.0, 96.0);
+                    final bigTitle = (w / 20).clamp(24.0, 38.0);
+                    final bigNumber = (w / 10).clamp(52.0, 96.0);
 
-                  return Padding(
-                    padding: outerPad,
-                    child: Column(
-                      children: [
-                        // Top Bar (optional)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
+                    return Padding(
+                      padding: outerPad,
+                      child: Column(
+                        children: [
+                          // Top Bar (optional)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF9800),
+                                  borderRadius: BorderRadius.circular(22),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x22000000),
+                                      blurRadius: 16,
+                                      offset: Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  "${AppText.get('result')} • $diffLabel",
+                                  style: TextStyle(
+                                    fontSize: (bigTitle * 0.65).clamp(
+                                      16.0,
+                                      22.0,
+                                    ),
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
+                              // back to games
+                            ],
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          Expanded(
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(18),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF9800),
-                                borderRadius: BorderRadius.circular(22),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(cardRadius),
+                                border: Border.all(
+                                  color: const Color(0xFFFF9800),
+                                  width: borderW,
+                                ),
                                 boxShadow: const [
                                   BoxShadow(
                                     color: Color(0x22000000),
-                                    blurRadius: 16,
-                                    offset: Offset(0, 10),
+                                    blurRadius: 22,
+                                    offset: Offset(0, 12),
                                   ),
                                 ],
                               ),
-                              child: Text(
-                                "${AppText.get('result')} • $diffLabel",
-                                style: TextStyle(
-                                  fontSize: (bigTitle * 0.65).clamp(16.0, 22.0),
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            // back to games
-                          ],
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        Expanded(
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(18),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(cardRadius),
-                              border: Border.all(
-                                color: const Color(0xFFFF9800),
-                                width: borderW,
-                              ),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color(0x22000000),
-                                  blurRadius: 22,
-                                  offset: Offset(0, 12),
-                                ),
-                              ],
-                            ),
-                            child: wide
-                                ? Row(
-                                    children: [
-                                      Expanded(
-                                        child: _AccuracyPanel(
-                                          acc: acc,
-                                          bigNumber: bigNumber,
-                                          bigTitle: bigTitle,
-                                          rankText: rankText,
+                              child: wide
+                                  ? Row(
+                                      children: [
+                                        Expanded(
+                                          child: _AccuracyPanel(
+                                            acc: acc,
+                                            bigNumber: bigNumber,
+                                            bigTitle: bigTitle,
+                                            rankText: rankText,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 18),
-                                      SizedBox(
-                                        width: (w * 0.4).clamp(330.0, 520.0),
-                                        child: _RightPanel(
+                                        const SizedBox(width: 18),
+                                        SizedBox(
+                                          width: (w * 0.4).clamp(330.0, 520.0),
+                                          child: _RightPanel(
+                                            hits: hits,
+                                            miss: miss,
+                                            pawShow: pawShow,
+                                            totalPaw: totalPaw,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Column(
+                                      children: [
+                                        Expanded(
+                                          child: _AccuracyPanel(
+                                            acc: acc,
+                                            bigNumber: bigNumber,
+                                            bigTitle: bigTitle,
+                                            rankText: rankText,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 14),
+                                        _RightPanel(
                                           hits: hits,
                                           miss: miss,
                                           pawShow: pawShow,
                                           totalPaw: totalPaw,
                                         ),
-                                      ),
-                                    ],
-                                  )
-                                : Column(
-                                    children: [
-                                      Expanded(
-                                        child: _AccuracyPanel(
-                                          acc: acc,
-                                          bigNumber: bigNumber,
-                                          bigTitle: bigTitle,
-                                          rankText: rankText,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 14),
-                                      _RightPanel(
-                                        hits: hits,
-                                        miss: miss,
-                                        pawShow: pawShow,
-                                        totalPaw: totalPaw,
-                                      ),
-                                      const SizedBox(height: 16),
-                                    ],
-                                  ),
+                                        const SizedBox(height: 16),
+                                      ],
+                                    ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

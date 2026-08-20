@@ -13,6 +13,7 @@ import 'mindtalk_audio_router.dart';
 import 'mindtalk_ai_service.dart';
 import 'mindtalk_emotion_analyzer.dart';
 import 'mindtalk_language.dart';
+import '../audio/page_voice.dart';
 
 enum MindTalkMode {
   fixedOnly, // ใช้ rule อย่างเดียว
@@ -348,172 +349,177 @@ class _MindTalkPageState extends State<MindTalkPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, c) {
-          final w = c.maxWidth;
-          final h = c.maxHeight;
+      body: PageVoice(
+        assetPath: VoiceAssets.talk,
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final w = c.maxWidth;
+            final h = c.maxHeight;
 
-          Rect r(double l, double t, double rw, double rh) =>
-              Rect.fromLTWH(w * l, h * t, w * rw, h * rh);
+            Rect r(double l, double t, double rw, double rh) =>
+                Rect.fromLTWH(w * l, h * t, w * rw, h * rh);
 
-          final titleRect = r(0.03, 0.06, 0.60, 0.12);
-          final chatRect = r(0.02, 0.18, 0.64, 0.48);
-          final camRect = r(0.72, 0.08, 0.26, 0.40);
-          final moodRect = r(0.76, 0.50, 0.20, 0.08);
-          final actionsRect = r(0.60, 0.70, 0.38, 0.23);
+            final titleRect = r(0.03, 0.06, 0.60, 0.12);
+            final chatRect = r(0.02, 0.18, 0.64, 0.48);
+            final camRect = r(0.72, 0.08, 0.26, 0.40);
+            final moodRect = r(0.76, 0.50, 0.20, 0.08);
+            final actionsRect = r(0.60, 0.70, 0.38, 0.23);
 
-          return Stack(
-            children: [
-              Positioned.fill(
-                child: ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    Colors.white.withValues(alpha: 0.35),
-                    BlendMode.darken,
-                  ),
-                  child: Image.asset(
-                    "assets/bg/mindtalkbg.png",
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-
-              Positioned.fromRect(
-                rect: titleRect,
-                child: Text(
-                  AppText.get('conversation'),
-                  style: TextStyle(
-                    fontSize: w * 0.055,
-                    fontWeight: FontWeight.w900,
-                    color: orange,
-                  ),
-                ),
-              ),
-
-              // 🌐 Language switcher
-              Positioned(
-                top: h * 0.07,
-                right: w * 0.30,
-                child: _LangSwitcher(
-                  current: _currentLang,
-                  onChanged: (lang) async {
-                    if (_listening) await _stt.stop();
-                    await _tts.stop();
-                    if (!mounted) return;
-                    setState(() {
-                      _currentLang = lang;
-                      _listening = false;
-                      _partial = "";
-                      _msgs
-                        ..clear()
-                        ..add(_Msg.bot(mindTalkGreeting(lang)));
-                    });
-                  },
-                ),
-              ),
-
-              Positioned.fromRect(
-                rect: chatRect,
-                child: _ChatScrollArea(
-                  messages: _msgs,
-                  tempUserText: (_listening && _partial.isNotEmpty)
-                      ? _partial
-                      : null,
-                  controller: _scrollCtrl,
-                ),
-              ),
-
-              Positioned.fromRect(
-                rect: camRect,
-                child: Column(
-                  children: [
-                    SwitchListTile(
-                      title: const Text("ESP32-CAM"),
-                      value: useEsp32Cam,
-                      onChanged: (v) => setState(() => useEsp32Cam = v),
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: ColorFiltered(
+                    colorFilter: ColorFilter.mode(
+                      Colors.white.withValues(alpha: 0.35),
+                      BlendMode.darken,
                     ),
-                    TextField(
-                      controller: espIpCtrl,
-                      decoration: const InputDecoration(labelText: "ESP32 IP"),
+                    child: Image.asset(
+                      "assets/bg/mindtalkbg.png",
+                      fit: BoxFit.cover,
                     ),
-                    Expanded(
-                      child: useEsp32Cam
-                          ? Esp32CamStreamView(ip: espIpCtrl.text.trim())
-                          : EmotionCameraPage(
-                              onEmotionDetected: _recordCameraEmotion,
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Positioned.fromRect(
-                rect: moodRect,
-                child: Container(
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: greenMood,
-                    borderRadius: BorderRadius.circular(24),
                   ),
+                ),
+
+                Positioned.fromRect(
+                  rect: titleRect,
                   child: Text(
-                    _userEmotion.name,
+                    AppText.get('conversation'),
                     style: TextStyle(
-                      fontSize: w * 0.03,
+                      fontSize: w * 0.055,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-
-              Positioned(
-                left: (w / 2) - (w * 0.13 / 2),
-                top: h * 0.72,
-                child: GestureDetector(
-                  onTap: _toggleMic,
-                  child: Container(
-                    width: w * 0.13,
-                    height: w * 0.13,
-                    decoration: const BoxDecoration(
                       color: orange,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      _processing
-                          ? Icons.hourglass_top
-                          : _listening
-                          ? Icons.stop
-                          : Icons.mic,
-                      size: w * 0.06,
-                      color: Colors.white,
                     ),
                   ),
                 ),
-              ),
 
-              Positioned.fromRect(
-                rect: actionsRect,
-                child: _ActionPanelImages(w: w),
-              ),
+                // 🌐 Language switcher
+                Positioned(
+                  top: h * 0.07,
+                  right: w * 0.30,
+                  child: _LangSwitcher(
+                    current: _currentLang,
+                    onChanged: (lang) async {
+                      if (_listening) await _stt.stop();
+                      await _tts.stop();
+                      if (!mounted) return;
+                      setState(() {
+                        _currentLang = lang;
+                        _listening = false;
+                        _partial = "";
+                        _msgs
+                          ..clear()
+                          ..add(_Msg.bot(mindTalkGreeting(lang)));
+                      });
+                    },
+                  ),
+                ),
 
-              Positioned(
-                left: 18,
-                bottom: 18,
-                child: GestureDetector(
-                  onTap: _resetChat,
+                Positioned.fromRect(
+                  rect: chatRect,
+                  child: _ChatScrollArea(
+                    messages: _msgs,
+                    tempUserText: (_listening && _partial.isNotEmpty)
+                        ? _partial
+                        : null,
+                    controller: _scrollCtrl,
+                  ),
+                ),
+
+                Positioned.fromRect(
+                  rect: camRect,
+                  child: Column(
+                    children: [
+                      SwitchListTile(
+                        title: const Text("ESP32-CAM"),
+                        value: useEsp32Cam,
+                        onChanged: (v) => setState(() => useEsp32Cam = v),
+                      ),
+                      TextField(
+                        controller: espIpCtrl,
+                        decoration: const InputDecoration(
+                          labelText: "ESP32 IP",
+                        ),
+                      ),
+                      Expanded(
+                        child: useEsp32Cam
+                            ? Esp32CamStreamView(ip: espIpCtrl.text.trim())
+                            : EmotionCameraPage(
+                                onEmotionDetected: _recordCameraEmotion,
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Positioned.fromRect(
+                  rect: moodRect,
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: orange, width: 4),
+                      color: greenMood,
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                    child: Text(AppText.get('reset')),
+                    child: Text(
+                      _userEmotion.name,
+                      style: TextStyle(
+                        fontSize: w * 0.03,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+
+                Positioned(
+                  left: (w / 2) - (w * 0.13 / 2),
+                  top: h * 0.72,
+                  child: GestureDetector(
+                    onTap: _toggleMic,
+                    child: Container(
+                      width: w * 0.13,
+                      height: w * 0.13,
+                      decoration: const BoxDecoration(
+                        color: orange,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _processing
+                            ? Icons.hourglass_top
+                            : _listening
+                            ? Icons.stop
+                            : Icons.mic,
+                        size: w * 0.06,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+
+                Positioned.fromRect(
+                  rect: actionsRect,
+                  child: _ActionPanelImages(w: w),
+                ),
+
+                Positioned(
+                  left: 18,
+                  bottom: 18,
+                  child: GestureDetector(
+                    onTap: _resetChat,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: orange, width: 4),
+                      ),
+                      child: Text(AppText.get('reset')),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

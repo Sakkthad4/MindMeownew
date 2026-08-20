@@ -45,6 +45,7 @@ class RobotBleService extends ChangeNotifier {
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
   StreamSubscription<List<int>>? _eventSubscription;
   Future<void> _writeQueue = Future<void>.value();
+  Future<bool>? _ensureConnectionOperation;
   bool _initialized = false;
 
   bool get isConnected => status == RobotBleStatus.connected;
@@ -91,6 +92,85 @@ class RobotBleService extends ChangeNotifier {
     return advertisedName == BleConstants.deviceName ||
         result.device.platformName == BleConstants.deviceName ||
         advertisesService;
+  }
+
+  /// Connects to the nearby MindMeow robot if it is not connected already.
+  /// Concurrent callers share the same scan/connect operation.
+  Future<bool> ensureConnected({
+    Duration timeout = const Duration(seconds: 8),
+  }) {
+    if (isConnected) return Future<bool>.value(true);
+
+    final active = _ensureConnectionOperation;
+    if (active != null) return active;
+
+    late final Future<bool> operation;
+    operation = _scanAndConnect(timeout).whenComplete(() {
+      if (identical(_ensureConnectionOperation, operation)) {
+        _ensureConnectionOperation = null;
+      }
+    });
+    _ensureConnectionOperation = operation;
+    return operation;
+  }
+
+  Future<bool> _scanAndConnect(Duration timeout) async {
+    await initialize();
+    if (isConnected) return true;
+
+    if (adapterState == BluetoothAdapterState.unknown) {
+      try {
+        adapterState = await FlutterBluePlus.adapterState
+            .where((state) => state != BluetoothAdapterState.unknown)
+            .first
+            .timeout(const Duration(seconds: 2));
+      } on TimeoutException {
+        return false;
+      }
+    }
+    if (adapterState != BluetoothAdapterState.on) return false;
+
+    final found = Completer<ScanResult>();
+    late final StreamSubscription<List<ScanResult>> discoverySubscription;
+    discoverySubscription = FlutterBluePlus.onScanResults.listen((results) {
+      if (found.isCompleted) return;
+      for (final result in results) {
+        if (_isMindMeow(result)) {
+          found.complete(result);
+          break;
+        }
+      }
+    });
+
+    errorMessage = null;
+    status = RobotBleStatus.scanning;
+    scanResults = const [];
+    notifyListeners();
+
+    try {
+      await FlutterBluePlus.stopScan();
+      await FlutterBluePlus.startScan(
+        withServices: [Guid(BleConstants.serviceUuid)],
+        timeout: timeout,
+      );
+      final result = await found.future.timeout(timeout);
+      await FlutterBluePlus.stopScan();
+      await connect(result);
+      return isConnected;
+    } on TimeoutException {
+      await FlutterBluePlus.stopScan();
+      if (status == RobotBleStatus.scanning) {
+        status = RobotBleStatus.idle;
+        notifyListeners();
+      }
+      return false;
+    } catch (error) {
+      await FlutterBluePlus.stopScan();
+      _setError('เชื่อมต่อหุ่นยนต์อัตโนมัติไม่สำเร็จ: $error');
+      return false;
+    } finally {
+      await discoverySubscription.cancel();
+    }
   }
 
   Future<void> startScan() async {

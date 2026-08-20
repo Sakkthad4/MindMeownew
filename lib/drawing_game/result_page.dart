@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../app_language.dart';
 import 'models.dart';
 import '../audio/page_voice.dart';
+import '../ble/robot_celebration.dart';
 
 class DrawingResultPage extends StatelessWidget {
   const DrawingResultPage({
@@ -29,168 +30,170 @@ class DrawingResultPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageVoice(
-        assetPath: VoiceAssets.greatJob,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Image.asset('assets/bg/drawitbg.png', fit: BoxFit.cover),
-            ),
-            Positioned.fill(child: ColoredBox(color: Color(0x1FFFFFFF))),
-            SafeArea(
-              child: Column(
-                children: [
-                  // ================= HEADER =================
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 36,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: orange,
-                        borderRadius: BorderRadius.circular(26),
-                      ),
-                      child: Text(
-                        AppText.get('result'),
-                        style: TextStyle(
-                          fontSize: 42,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
+      body: RobotCelebration(
+        child: PageVoice(
+          assetPath: VoiceAssets.greatJob,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Image.asset('assets/bg/drawitbg.png', fit: BoxFit.cover),
+              ),
+              Positioned.fill(child: ColoredBox(color: Color(0x1FFFFFFF))),
+              SafeArea(
+                child: Column(
+                  children: [
+                    // ================= HEADER =================
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 36,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: orange,
+                          borderRadius: BorderRadius.circular(26),
+                        ),
+                        child: Text(
+                          AppText.get('result'),
+                          style: TextStyle(
+                            fontSize: 42,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  // ================= CONTENT =================
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        children: [
-                          // -------- LEFT : PREVIEW --------
-                          Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(26),
-                                border: Border.all(color: orange, width: 6),
-                              ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    AppText.get('yourDrawing'),
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w800,
-                                      color: gray,
+                    // ================= CONTENT =================
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: [
+                            // -------- LEFT : PREVIEW --------
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(26),
+                                  border: Border.all(color: orange, width: 6),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      AppText.get('yourDrawing'),
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w800,
+                                        color: gray,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Expanded(
-                                    child: AspectRatio(
-                                      aspectRatio: 1,
-                                      child: CustomPaint(
-                                        painter: _DrawPreviewPainter(
-                                          points: userPoints,
+                                    const SizedBox(height: 12),
+                                    Expanded(
+                                      child: AspectRatio(
+                                        aspectRatio: 1,
+                                        child: CustomPaint(
+                                          painter: _DrawPreviewPainter(
+                                            points: userPoints,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
 
-                          const SizedBox(width: 20),
+                            const SizedBox(width: 20),
 
-                          // -------- RIGHT : SCORE --------
+                            // -------- RIGHT : SCORE --------
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(26),
+                                  border: Border.all(color: orange, width: 6),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      AppText.get('accuracy'),
+                                      style: TextStyle(
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.w800,
+                                        color: gray,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      AppText.name(templateName),
+                                      style: const TextStyle(
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.w700,
+                                        color: gray,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+
+                                    // BIG SCORE
+                                    Text(
+                                      "${accuracy.toStringAsFixed(0)}%",
+                                      style: const TextStyle(
+                                        fontSize: 86,
+                                        fontWeight: FontWeight.w900,
+                                        color: green,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+
+                                    Text(
+                                      resultLabel,
+                                      style: const TextStyle(
+                                        fontSize: 46,
+                                        fontWeight: FontWeight.w900,
+                                        color: green,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // ================= BUTTONS =================
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                      child: Row(
+                        children: [
                           Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(26),
-                                border: Border.all(color: orange, width: 6),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    AppText.get('accuracy'),
-                                    style: TextStyle(
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.w800,
-                                      color: gray,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    AppText.name(templateName),
-                                    style: const TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w700,
-                                      color: gray,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-
-                                  // BIG SCORE
-                                  Text(
-                                    "${accuracy.toStringAsFixed(0)}%",
-                                    style: const TextStyle(
-                                      fontSize: 86,
-                                      fontWeight: FontWeight.w900,
-                                      color: green,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-
-                                  Text(
-                                    resultLabel,
-                                    style: const TextStyle(
-                                      fontSize: 46,
-                                      fontWeight: FontWeight.w900,
-                                      color: green,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            child: _actionButton(
+                              label: AppText.get('playAgain'),
+                              onTap: () => Navigator.pop(context),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _actionButton(
+                              label: AppText.get('back'),
+                              onTap: () =>
+                                  Navigator.popUntil(context, (r) => r.isFirst),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-
-                  // ================= BUTTONS =================
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _actionButton(
-                            label: AppText.get('playAgain'),
-                            onTap: () => Navigator.pop(context),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _actionButton(
-                            label: AppText.get('back'),
-                            onTap: () =>
-                                Navigator.popUntil(context, (r) => r.isFirst),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

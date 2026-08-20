@@ -38,7 +38,6 @@ import 'route_observer.dart';
 import 'game_logic.dart';
 import 'services/robot_event_dispatcher.dart';
 
-import 'audio/soundeffect.dart';
 import 'app_language.dart';
 
 void main() {
@@ -86,6 +85,13 @@ class _AppBootstrapState extends State<AppBootstrap> {
     _robotEventSubscription = RobotBleService.I.events.listen(
       (event) => unawaited(_dispatcher.handle(event)),
     );
+
+    final mobilePlatform =
+        defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+    if (!kIsWeb && mobilePlatform) {
+      unawaited(RobotBleService.I.ensureConnected());
+    }
   }
 
   @override
@@ -248,7 +254,9 @@ class MyApp extends StatelessWidget {
 
           routes: {
             '/start': (context) => const StartPage(),
-            '/home': (context) => const HomePage(),
+            '/home': (context) => HomePage(
+              playGreeting: ModalRoute.of(context)?.settings.arguments == true,
+            ),
             '/second': (context) => const SecondPage(),
 
             '/games': (context) => const GameMenuPage(),
@@ -313,8 +321,11 @@ class StartPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  SoundFx.play(SoundFx.hello, volume: SoundFx.helloVolume);
-                  Navigator.pushReplacementNamed(context, '/home');
+                  Navigator.pushReplacementNamed(
+                    context,
+                    '/home',
+                    arguments: true,
+                  );
                 },
                 child: Text(
                   AppText.get('start'),

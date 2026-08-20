@@ -14,6 +14,9 @@ class VoiceAssets {
   static const greatJob = 'assets/voice/greatjob.mp3';
   static const catchPaw = 'assets/voice/catchpaw.mp3';
   static const letsDrawing = 'assets/voice/letsdrawing.mp3';
+  static const hello = 'assets/voice/hello.mp3';
+  static const talk = 'assets/voice/talk.mp3';
+  static const exercise = 'assets/voice/exercise.mp3';
 }
 
 /// Plays one voice prompt when the page enters the widget tree.
@@ -27,36 +30,45 @@ class PageVoice extends StatefulWidget {
     required this.assetPath,
     required this.child,
     this.volume = 1,
+    this.enabled = true,
   });
 
   final String assetPath;
   final Widget child;
   final double volume;
+  final bool enabled;
 
   @override
   State<PageVoice> createState() => _PageVoiceState();
 }
 
 class _PageVoiceState extends State<PageVoice> {
-  late int _requestId;
+  int? _requestId;
 
   @override
   void initState() {
     super.initState();
-    _requestId = PageVoicePlayer.instance.play(
-      widget.assetPath,
-      volume: widget.volume,
-    );
+    _playIfEnabled();
   }
 
   @override
   void didUpdateWidget(PageVoice oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.assetPath == widget.assetPath &&
-        oldWidget.volume == widget.volume) {
+        oldWidget.volume == widget.volume &&
+        oldWidget.enabled == widget.enabled) {
       return;
     }
-    PageVoicePlayer.instance.stop(_requestId);
+    final requestId = _requestId;
+    if (requestId != null) PageVoicePlayer.instance.stop(requestId);
+    _playIfEnabled();
+  }
+
+  void _playIfEnabled() {
+    if (!widget.enabled) {
+      _requestId = null;
+      return;
+    }
     _requestId = PageVoicePlayer.instance.play(
       widget.assetPath,
       volume: widget.volume,
@@ -65,7 +77,8 @@ class _PageVoiceState extends State<PageVoice> {
 
   @override
   void dispose() {
-    PageVoicePlayer.instance.stop(_requestId);
+    final requestId = _requestId;
+    if (requestId != null) PageVoicePlayer.instance.stop(requestId);
     super.dispose();
   }
 

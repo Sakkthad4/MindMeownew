@@ -3,7 +3,6 @@ import '../app_language.dart';
 import 'data.dart';
 import 'models.dart';
 import 'result_screen.dart';
-import '../audio/soundeffect.dart';
 import '../audio/page_voice.dart';
 
 class IngredientSelectScreen extends StatefulWidget {
@@ -174,11 +173,6 @@ class _IngredientSelectScreenState extends State<IngredientSelectScreen> {
 
                         ElevatedButton(
                           onPressed: () {
-                            SoundFx.play(
-                              SoundFx.gumgum,
-                              volume: SoundFx.gumgumVolume,
-                            );
-
                             Navigator.push(
                               context,
                               MaterialPageRoute(
