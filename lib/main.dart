@@ -276,7 +276,7 @@ class MyApp extends StatelessWidget {
             '/loadpg': (context) => const CatPawLoadingPage(),
           },
 
-          navigatorObservers: [routeObserver],
+          navigatorObservers: [routeObserver, robotFeatureMotionObserver],
         );
       },
     );

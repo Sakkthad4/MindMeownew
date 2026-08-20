@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_test22/ble/ble_constants.dart';
 import 'package:flutter_test22/ble/ble_protocol.dart';
+import 'package:flutter_test22/ble/robot_celebration.dart';
 import 'package:flutter_test22/ble/robot_ble_service.dart';
 
 void main() {
@@ -99,6 +100,24 @@ void main() {
       ble.applyEventForTest(const {'type': 'error', 'code': 'invalid_command'});
 
       expect(ble.errorMessage, contains('invalid_command'));
+    });
+
+    test('builds exactly one movement set for feature entry', () {
+      expect(RobotCelebrationController.servoTargetsForRounds(1), const [
+        (head: 60, tail: 50),
+        (head: 120, tail: 130),
+        (head: 90, tail: 90),
+      ]);
+    });
+
+    test('builds exactly two movement sets for celebration', () {
+      expect(RobotCelebrationController.servoTargetsForRounds(2), const [
+        (head: 60, tail: 50),
+        (head: 120, tail: 130),
+        (head: 60, tail: 50),
+        (head: 120, tail: 130),
+        (head: 90, tail: 90),
+      ]);
     });
   });
 }

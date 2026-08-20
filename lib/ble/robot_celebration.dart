@@ -33,23 +33,38 @@ class RobotCelebrationController {
   static final RobotCelebrationController instance =
       RobotCelebrationController._();
 
-  Future<void>? _activeCelebration;
+  Future<void> _motionQueue = Future<void>.value();
 
-  Future<void> celebrate() {
-    final active = _activeCelebration;
-    if (active != null) return active;
+  Future<void> celebrate() =>
+      _enqueue(() => _runMotion(rounds: 2, celebrateWithHeartEyes: true));
 
-    late final Future<void> operation;
-    operation = _runCelebration().whenComplete(() {
-      if (identical(_activeCelebration, operation)) {
-        _activeCelebration = null;
-      }
+  Future<void> greetFeature() =>
+      _enqueue(() => _runMotion(rounds: 1, celebrateWithHeartEyes: false));
+
+  Future<void> _enqueue(Future<void> Function() action) {
+    final operation = _motionQueue.then((_) => action());
+    _motionQueue = operation.catchError((Object error, StackTrace stackTrace) {
+      debugPrint('ROBOT MOTION QUEUE ERROR: $error\n$stackTrace');
     });
-    _activeCelebration = operation;
     return operation;
   }
 
-  Future<void> _runCelebration() async {
+  @visibleForTesting
+  static List<({int head, int tail})> servoTargetsForRounds(int rounds) {
+    assert(rounds > 0);
+    return <({int head, int tail})>[
+      for (var round = 0; round < rounds; round++) ...[
+        (head: BleConstants.headMinAngle, tail: BleConstants.tailMinAngle),
+        (head: BleConstants.headMaxAngle, tail: BleConstants.tailMaxAngle),
+      ],
+      (head: BleConstants.headCenterAngle, tail: BleConstants.tailCenterAngle),
+    ];
+  }
+
+  Future<void> _runMotion({
+    required int rounds,
+    required bool celebrateWithHeartEyes,
+  }) async {
     final mobilePlatform =
         defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS;
@@ -59,74 +74,43 @@ class RobotCelebrationController {
     final connected = ble.isConnected || await ble.ensureConnected();
     if (!connected) return;
 
-    final previousEyesEnabled = ble.eyesEnabled;
-    final previousEyeMode = BleConstants.eyeModes.contains(ble.eyeMode)
-        ? ble.eyeMode
-        : 'normal';
-    final previousHeadEnabled = ble.headServoEnabled;
-    final previousTailEnabled = ble.tailServoEnabled;
-    final previousHeadAngle = ble.headAngle;
-    final previousTailAngle = ble.tailAngle;
-
     try {
-      await ble.setEyesEnabled(true);
       await ble.setServoEnabled('head', true);
       await ble.setServoEnabled('tail', true);
-      await ble.setEyeMode('heart');
+      if (celebrateWithHeartEyes) {
+        await ble.setEyesEnabled(true);
+        await ble.setEyeMode('heart');
+      }
 
-      await ble.setServoAngle('head', BleConstants.headMinAngle);
-      await ble.wagTail();
-      await Future<void>.delayed(const Duration(milliseconds: 650));
-
-      if (!ble.isConnected) return;
-      await ble.setServoAngle('head', BleConstants.headMaxAngle);
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-
-      if (!ble.isConnected) return;
-      await ble.setServoAngle('head', BleConstants.headMinAngle);
-      await Future<void>.delayed(const Duration(milliseconds: 900));
-
-      if (!ble.isConnected) return;
-      await ble.setServoAngle('head', BleConstants.headCenterAngle);
-      await Future<void>.delayed(const Duration(milliseconds: 1200));
-    } catch (error, stackTrace) {
-      debugPrint('ROBOT CELEBRATION ERROR: $error\n$stackTrace');
-    } finally {
-      if (ble.isConnected) {
-        await _restoreRobot(
-          ble,
-          eyesEnabled: previousEyesEnabled,
-          eyeMode: previousEyeMode,
-          headEnabled: previousHeadEnabled,
-          tailEnabled: previousTailEnabled,
-          headAngle: previousHeadAngle,
-          tailAngle: previousTailAngle,
+      final targets = servoTargetsForRounds(rounds);
+      for (var index = 0; index < targets.length; index++) {
+        if (!ble.isConnected) return;
+        final target = targets[index];
+        await ble.setServoAngle('head', target.head);
+        await ble.setServoAngle('tail', target.tail);
+        await Future<void>.delayed(
+          index == targets.length - 1
+              ? const Duration(milliseconds: 700)
+              : const Duration(milliseconds: 650),
         );
       }
-    }
-  }
-
-  Future<void> _restoreRobot(
-    RobotBleService ble, {
-    required bool eyesEnabled,
-    required String eyeMode,
-    required bool headEnabled,
-    required bool tailEnabled,
-    required int headAngle,
-    required int tailAngle,
-  }) async {
-    await _ignoreFailure(() => ble.setServoAngle('head', headAngle));
-    await _ignoreFailure(() => ble.setServoAngle('tail', tailAngle));
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-    await _ignoreFailure(() => ble.setEyeMode(eyeMode));
-    if (!eyesEnabled) {
-      await _ignoreFailure(() => ble.setEyesEnabled(false));
-    }
-    if (!headEnabled) {
-      await _ignoreFailure(() => ble.setServoEnabled('head', false));
-    }
-    if (!tailEnabled) {
-      await _ignoreFailure(() => ble.setServoEnabled('tail', false));
+    } catch (error, stackTrace) {
+      debugPrint('ROBOT MOTION ERROR: $error\n$stackTrace');
+    } finally {
+      if (ble.isConnected) {
+        // An explicit angle command also cancels a tail wag that may still be
+        // active in the firmware. Keep both servos attached at their safe home.
+        await _ignoreFailure(
+          () => ble.setServoAngle('head', BleConstants.headCenterAngle),
+        );
+        await _ignoreFailure(
+          () => ble.setServoAngle('tail', BleConstants.tailCenterAngle),
+        );
+        if (celebrateWithHeartEyes) {
+          await _ignoreFailure(() => ble.setEyesEnabled(true));
+          await _ignoreFailure(() => ble.setEyeMode('normal'));
+        }
+      }
     }
   }
 

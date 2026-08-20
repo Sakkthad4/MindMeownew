@@ -1,9 +1,7 @@
 import '../providers/cat_state.dart';
 
 void handleEspEvent(Map<String, dynamic> data, CatState cat) {
-  if (!cat.gameActive) return; // ⭐⭐ จุดหยุดเสียง
-
-  if (data['type'] == 'touch') {
+  if (data['type'] == 'touch' && data['touched'] == true) {
     cat.addXP(data['xp'] ?? 1);
     playMp3('cat_touch.mp3');
   }

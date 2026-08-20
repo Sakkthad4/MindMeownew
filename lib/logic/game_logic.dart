@@ -1,7 +1,4 @@
-import 'dart:async';
-
 import '../providers/cat_state.dart';
-import '../ble/robot_celebration.dart';
 
 late CatState _cat;
 
@@ -11,8 +8,6 @@ void initGameLogic(CatState cat) {
 
 void onGameWin() {
   _cat.endGame(); // ⭐⭐ สำคัญมาก
-
-  unawaited(RobotCelebrationController.instance.celebrate());
 
   playMp3("assets/effects/game_win.mp3");
 }

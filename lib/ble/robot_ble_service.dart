@@ -247,6 +247,7 @@ class RobotBleService extends ChangeNotifier {
       status = RobotBleStatus.connected;
       notifyListeners();
       await ping();
+      await _initializeConnectedRobot();
       await requestStatus();
     } catch (error) {
       await _clearConnection(disconnect: true);
@@ -338,31 +339,92 @@ class RobotBleService extends ChangeNotifier {
     }
   }
 
-  Future<void> send(Map<String, dynamic> message) {
+  Future<void> send(Map<String, dynamic> message) =>
+      _queueWrite(message, responseMatches: null);
+
+  Future<void> _sendConfirmed(
+    Map<String, dynamic> message,
+    bool Function(Map<String, dynamic> event) responseMatches,
+  ) => _queueWrite(message, responseMatches: responseMatches);
+
+  Future<void> _queueWrite(
+    Map<String, dynamic> message, {
+    required bool Function(Map<String, dynamic> event)? responseMatches,
+  }) {
     final operation = _writeQueue.then((_) async {
       final characteristic = _commandCharacteristic;
       if (!isConnected || characteristic == null) {
         throw const BleProtocolException('ยังไม่ได้เชื่อมต่อหุ่นยนต์');
       }
+      StreamSubscription<Map<String, dynamic>>? responseSubscription;
+      Completer<Map<String, dynamic>>? responseCompleter;
+      if (responseMatches != null) {
+        responseCompleter = Completer<Map<String, dynamic>>();
+        responseSubscription = _events.stream.listen((event) {
+          if (responseCompleter!.isCompleted) return;
+          if (event['type'] == 'error' || responseMatches(event)) {
+            responseCompleter.complete(event);
+          }
+        });
+      }
+
       final bytes = BleProtocol.encode(message);
       lastSent = utf8.decode(bytes);
       notifyListeners();
-      await characteristic.write(bytes, withoutResponse: false);
+      try {
+        await characteristic.write(bytes, withoutResponse: false);
+        final completer = responseCompleter;
+        if (completer != null) {
+          final response = await completer.future.timeout(
+            const Duration(seconds: 2),
+          );
+          if (response['type'] == 'error') {
+            throw BleProtocolException(
+              'Robot error: ${response['code'] ?? response['message'] ?? 'unknown'}',
+            );
+          }
+        }
+      } finally {
+        await responseSubscription?.cancel();
+      }
     });
     _writeQueue = operation.catchError((Object _) {});
     return operation;
   }
 
-  Future<void> ping() => send(const {'type': 'ping'});
+  Future<void> ping() => _sendConfirmed(const {
+    'type': 'ping',
+  }, (event) => event['type'] == 'pong');
 
-  Future<void> requestStatus() => send(const {'type': 'status_get'});
+  Future<void> requestStatus() => _sendConfirmed(const {
+    'type': 'status_get',
+  }, (event) => event['type'] == 'status' || event['type'] == 'eyes');
 
-  Future<void> setTouchEnabled(bool enabled) =>
-      send({'type': 'touch', 'enabled': enabled});
+  /// Applies the safe home position every time a BLE connection is made.
+  /// Touch stays enabled while the servos are attached, so head-petting events
+  /// continue to reach the app after connecting to the robot.
+  Future<void> _initializeConnectedRobot() async {
+    await setTouchEnabled(true);
+    await setServoEnabled('head', true);
+    await setServoEnabled('tail', true);
+    await setServoAngle('head', BleConstants.headCenterAngle);
+    await setServoAngle('tail', BleConstants.tailCenterAngle);
+  }
+
+  Future<void> setTouchEnabled(bool enabled) => _sendConfirmed({
+    'type': 'touch',
+    'enabled': enabled,
+  }, (event) => event['type'] == 'touch' && event['enabled'] == enabled);
 
   Future<void> setServoEnabled(String id, bool enabled) {
     _validateServoId(id);
-    return send({'type': 'servo', 'id': id, 'enabled': enabled});
+    return _sendConfirmed(
+      {'type': 'servo', 'id': id, 'enabled': enabled},
+      (event) =>
+          event['type'] == 'servo' &&
+          event['id'] == id &&
+          event['enabled'] == enabled,
+    );
   }
 
   Future<void> setServoAngle(String id, int angle) {
@@ -373,15 +435,21 @@ class RobotBleService extends ChangeNotifier {
     final maxAngle = id == 'head'
         ? BleConstants.headMaxAngle
         : BleConstants.tailMaxAngle;
-    return send({
-      'type': 'servo',
-      'id': id,
-      'angle': angle.clamp(minAngle, maxAngle),
+    final safeAngle = angle.clamp(minAngle, maxAngle);
+    return _sendConfirmed({'type': 'servo', 'id': id, 'angle': safeAngle}, (
+      event,
+    ) {
+      return event['type'] == 'servo' &&
+          event['id'] == id &&
+          (event['angle'] as num?)?.toInt() == safeAngle;
     });
   }
 
-  Future<void> wagTail() =>
-      send(const {'type': 'servo', 'id': 'tail', 'action': 'wag'});
+  Future<void> wagTail() => _sendConfirmed(const {
+    'type': 'servo',
+    'id': 'tail',
+    'action': 'wag',
+  }, (event) => event['type'] == 'servo' && event['id'] == 'tail');
 
   void _validateServoId(String id) {
     if (id != 'head' && id != 'tail') {
@@ -389,14 +457,20 @@ class RobotBleService extends ChangeNotifier {
     }
   }
 
-  Future<void> setEyesEnabled(bool enabled) =>
-      send({'type': 'eyes', 'enabled': enabled});
+  Future<void> setEyesEnabled(bool enabled) => _sendConfirmed({
+    'type': 'eyes',
+    'enabled': enabled,
+  }, (event) => event['type'] == 'eyes' && event['enabled'] == enabled);
 
   Future<void> setEyeMode(String mode) {
     if (!BleConstants.eyeModes.contains(mode)) {
       throw BleProtocolException('ไม่รองรับโหมดตา: $mode');
     }
-    return send({'type': 'eyes', 'action': 'test', 'mode': mode});
+    return _sendConfirmed({
+      'type': 'eyes',
+      'action': 'test',
+      'mode': mode,
+    }, (event) => event['type'] == 'eyes' && event['mode'] == mode);
   }
 
   Future<void> disconnect() async {

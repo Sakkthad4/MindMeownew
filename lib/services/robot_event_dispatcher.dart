@@ -3,11 +3,16 @@ import '../healthcare/data/cat_bond_store.dart';
 import '../providers/cat_state.dart';
 
 class RobotEventDispatcher {
-  RobotEventDispatcher(this.cat, {CatBondStore? bondStore})
-    : _bondStore = bondStore ?? CatBondStore();
+  RobotEventDispatcher(
+    this.cat, {
+    CatBondStore? bondStore,
+    Future<void> Function()? playTouchSound,
+  }) : _bondStore = bondStore ?? CatBondStore(),
+       _playTouchSound = playTouchSound ?? SoundFx.tapFx;
 
   final CatState cat;
   final CatBondStore _bondStore;
+  final Future<void> Function() _playTouchSound;
   bool _lastTouched = false;
 
   Future<void> handle(Map<String, dynamic> data) async {
@@ -19,12 +24,12 @@ class RobotEventDispatcher {
     // notifications cannot award XP more than once for the same touch.
     _lastTouched = touched;
 
-    if (isRisingEdge && cat.gameActive) {
+    if (isRisingEdge) {
       const xp = 10;
       cat.addXP(xp);
       await _bondStore.addXp(amount: xp, source: 'ble_touch');
       try {
-        await SoundFx.tapFx();
+        await _playTouchSound();
       } catch (_) {
         // A missing/unavailable audio output must not stop touch collection.
       }
