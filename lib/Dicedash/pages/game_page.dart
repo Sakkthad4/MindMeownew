@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import '../../ble/robot_celebration.dart';
 import '../models.dart';
 import '../question_engine.dart';
 import '../theme/dicedash_theme.dart';
@@ -35,6 +38,7 @@ class _GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
+    unawaited(RobotCelebrationController.instance.greetFeature());
     _newRound();
   }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../app_language.dart';
+import '../ble/robot_celebration.dart';
 import '../healthcare/data/chart_store.dart';
 
 import 'difficulty_page.dart';
@@ -38,6 +39,7 @@ class _DrawingGamePageState extends State<DrawingGamePage> {
   @override
   void initState() {
     super.initState();
+    unawaited(RobotCelebrationController.instance.greetFeature());
 
     cfg = configFor(widget.difficulty);
     template = pickTemplate(cfg.pool);

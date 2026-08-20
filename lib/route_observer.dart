@@ -14,14 +14,9 @@ class _RobotFeatureMotionObserver extends NavigatorObserver {
   static const _featureRoutes = <String>{
     '/calendar',
     '/stretch',
-    '/games',
     '/gemini',
     '/geminiloop',
     '/healthcare',
-    '/supermarket',
-    '/dicedash',
-    '/catpaw',
-    '/drawvis',
   };
 
   void _moveForFeature(Route<dynamic>? route) {

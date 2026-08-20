@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../app_language.dart';
+import '../ble/robot_celebration.dart';
 
 import '../healthcare/data/chart_store.dart';
 import 'cat_paw_difficulty_screen.dart';
@@ -71,6 +72,7 @@ class _CatPawGamePageState extends State<CatPawGamePage> {
   @override
   void initState() {
     super.initState();
+    unawaited(RobotCelebrationController.instance.greetFeature());
     _start();
   }
 

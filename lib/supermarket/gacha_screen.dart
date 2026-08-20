@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../app_language.dart';
+import '../ble/robot_celebration.dart';
 
 import 'data.dart';
 import 'models.dart';
@@ -29,6 +31,7 @@ class _GachaScreenState extends State<GachaScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(RobotCelebrationController.instance.greetFeature());
     if (recipeTemplates.isNotEmpty) {
       _current = recipeTemplates.first;
       _heroTag = "plate_${_current!.id}_init";
